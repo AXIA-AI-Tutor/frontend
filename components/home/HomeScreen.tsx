@@ -29,11 +29,21 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
       {/* 상단 그라디언트 헤더 */}
       <div
         className="h-[190px] px-[18px] pt-12 text-white"
-        style={{ background: 'linear-gradient(135deg,#2e96ff 0%,#3d72ff 42%,#7c3aed 100%)' }}
+        style={{
+          background:
+            'linear-gradient(135deg,#2e96ff 0%,#3d72ff 42%,#7c3aed 100%)',
+        }}
       >
         <div className="flex items-center justify-between">
           <div className="text-[31px] font-black tracking-tight">
-            AI 코치 <span style={{ filter: 'drop-shadow(0 8px 14px rgba(255,255,255,.24))' }}>✦</span>
+            AI 코치{' '}
+            <span
+              style={{
+                filter: 'drop-shadow(0 8px 14px rgba(255,255,255,.24))',
+              }}
+            >
+              ✦
+            </span>
           </div>
           {/* 프로필 아이콘 */}
           <div className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 shadow-lg">
@@ -50,7 +60,10 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
         style={{ top: 142, bottom: 70 }}
       >
         {/* 오늘의 연습 */}
-        <div className="relative mb-2.5 min-h-[108px] rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm" style={{ paddingRight: 92 }}>
+        <div
+          className="relative mb-2.5 min-h-[108px] rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm"
+          style={{ paddingRight: 92 }}
+        >
           <h3 className="mb-1.5 text-[17px] font-black">오늘의 연습</h3>
           <p className="text-[12.5px] leading-snug text-slate-600">
             {mode === '면접'
@@ -61,7 +74,8 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
           <div
             className="absolute right-4 top-6 h-[68px] w-[68px] rounded-full"
             style={{
-              background: 'radial-gradient(circle at center,#fff 0 22%,#dce7ff 23% 42%,#fff 43% 52%,#a8bfff 53% 68%,#eef3ff 69%)',
+              background:
+                'radial-gradient(circle at center,#fff 0 22%,#dce7ff 23% 42%,#fff 43% 52%,#a8bfff 53% 68%,#eef3ff 69%)',
               boxShadow: 'inset 0 0 0 1px #d5def8',
             }}
           />
@@ -79,7 +93,9 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
 
         {/* 아바타 카드 */}
         <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 shadow-sm">
-          <AvatarCard onChangeAvatar={(name) => onToast(`${name}(으)로 변경되었습니다.`)} />
+          <AvatarCard
+            onChangeAvatar={(name) => onToast(`${name}(으)로 변경되었습니다.`)}
+          />
         </div>
 
         {/* 지난 세션 요약 */}
@@ -89,11 +105,15 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
 
         {/* 프라이버시 설정 */}
         <div className="mb-2.5 flex items-center gap-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
-          <span className="grid h-9 w-9 place-items-center rounded-[14px] bg-blue-50 text-blue-700">🛡</span>
+          <span className="grid h-9 w-9 place-items-center rounded-[14px] bg-blue-50 text-blue-700">
+            🛡
+          </span>
           <div className="flex-1">
             <b className="block text-[13px]">프라이버시 설정</b>
             <span className="block text-[11px] text-slate-500">
-              {privacy ? '원본 영상은 저장하지 않아요' : '원본 영상 저장 옵션 확인 필요'}
+              {privacy
+                ? '원본 영상은 저장하지 않아요'
+                : '원본 영상 저장 옵션 확인 필요'}
             </span>
           </div>
           <Toggle
@@ -110,7 +130,10 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
         <button
           onClick={() => onNavigate('live')}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 py-[15px] text-lg font-black text-white"
-          style={{ background: 'linear-gradient(135deg,#1689ff,#7c3aed)', boxShadow: '0 13px 26px rgba(55,86,255,.25)' }}
+          style={{
+            background: 'linear-gradient(135deg,#1689ff,#7c3aed)',
+            boxShadow: '0 13px 26px rgba(55,86,255,.25)',
+          }}
         >
           ▶ 연습 시작
         </button>

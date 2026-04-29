@@ -30,7 +30,10 @@ export function WaveCard({ recTime }: WaveCardProps) {
           <span className="text-xs text-slate-500">{recTime}</span>
         </div>
         <small className="text-xs text-slate-400">자연스럽게 말해보세요.</small>
-        <div ref={waveRef} className="mt-1 flex h-[50px] items-center gap-[3px] overflow-hidden" />
+        <div
+          ref={waveRef}
+          className="mt-1 flex h-[50px] items-center gap-[3px] overflow-hidden"
+        />
       </div>
     </>
   )

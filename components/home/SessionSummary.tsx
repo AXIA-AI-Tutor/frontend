@@ -9,7 +9,10 @@ interface SessionSummaryProps {
 export function SessionSummary({ onNavigate }: SessionSummaryProps) {
   return (
     <>
-      <div className="flex items-center justify-between" style={{ fontSize: 15 }}>
+      <div
+        className="flex items-center justify-between"
+        style={{ fontSize: 15 }}
+      >
         <h3 className="font-bold">지난 세션 요약</h3>
         <button
           onClick={() => onNavigate('report')}
@@ -26,11 +29,15 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
         </div>
         <div>
           <b className="block text-[13px]">강점</b>
-          <span className="text-[12px] font-black text-emerald-500">논리적 구조 ↑</span>
+          <span className="text-[12px] font-black text-emerald-500">
+            논리적 구조 ↑
+          </span>
         </div>
         <div>
           <b className="block text-[13px]">개선 포인트</b>
-          <span className="text-[12px] font-black text-orange-500">답변 길이 ↑</span>
+          <span className="text-[12px] font-black text-orange-500">
+            답변 길이 ↑
+          </span>
         </div>
       </div>
     </>

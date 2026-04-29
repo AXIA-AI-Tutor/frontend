@@ -33,7 +33,9 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
       setEye(82 + Math.floor(Math.random() * 8))
       setPose(4 + Math.floor(Math.random() * 8))
     }, 2200)
-    return () => { if (tickRef.current) clearInterval(tickRef.current) }
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current)
+    }
   }, [])
 
   const timeStr = `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
@@ -43,9 +45,19 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
       {/* 헤더 */}
       <div className="h-[108px] bg-white px-[17px] pt-12">
         <div className="flex items-center justify-between">
-          <button onClick={() => onNavigate('home')} className="border-0 bg-transparent text-lg font-black text-slate-800">‹</button>
+          <button
+            onClick={() => onNavigate('home')}
+            className="border-0 bg-transparent text-lg font-black text-slate-800"
+          >
+            ‹
+          </button>
           <div className="text-lg font-black text-slate-900">실시간 연습</div>
-          <button onClick={() => onNavigate('home')} className="border-0 bg-transparent font-black text-slate-800">나가기 ⇱</button>
+          <button
+            onClick={() => onNavigate('home')}
+            className="border-0 bg-transparent font-black text-slate-800"
+          >
+            나가기 ⇱
+          </button>
         </div>
       </div>
 
@@ -56,10 +68,14 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
       >
         <TimerPill time={`${timeStr} / 01:00`} turn={1} total={5} />
         <LiveMetrics wpm={wpm} eye={eye} pose={pose} />
-        <CoachAvatarLive question={`자기소개와\n지원 동기를\n1분 안에\n말해보세요.`} />
+        <CoachAvatarLive
+          question={`자기소개와\n지원 동기를\n1분 안에\n말해보세요.`}
+        />
         <WaveCard recTime={timeStr} />
         <TranscriptCard />
-        <HintCard onClick={() => onToast('힌트가 현재 답변 목표에 적용되었습니다.')} />
+        <HintCard
+          onClick={() => onToast('힌트가 현재 답변 목표에 적용되었습니다.')}
+        />
 
         {/* 제어 버튼 */}
         <div className="mt-3 grid grid-cols-3 gap-[9px]">
@@ -70,7 +86,10 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
             ■ 중지
           </button>
           <button
-            onClick={() => { setSeconds(0); onToast('현재 질문을 다시 시작합니다.') }}
+            onClick={() => {
+              setSeconds(0)
+              onToast('현재 질문을 다시 시작합니다.')
+            }}
             className="rounded-[15px] border border-slate-200 bg-white py-3 font-black text-slate-700"
           >
             ↻ 다시

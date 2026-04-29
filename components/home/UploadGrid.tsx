@@ -47,7 +47,12 @@ export function UploadGrid({ onUpload }: UploadGridProps) {
               {icon}
             </div>
             <b className="block text-[13px]">{label}</b>
-            <span className={cn('text-[11px]', done ? 'font-black text-emerald-500' : 'text-slate-400')}>
+            <span
+              className={cn(
+                'text-[11px]',
+                done ? 'font-black text-emerald-500' : 'text-slate-400'
+              )}
+            >
               {done ? '완료' : '업로드 ⇧'}
             </span>
           </button>

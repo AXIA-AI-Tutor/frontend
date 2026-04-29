@@ -48,7 +48,8 @@ export function FeedbackSheet({ onNavigate, onSave }: FeedbackSheetProps) {
       </div>
 
       <FeedbackBlock title="✓ 한 줄 요약">
-        회사·직무와의 연결은 좋지만, 구체적 경험과 기여 포인트가 더해지면 설득력이 크게 높아집니다.
+        회사·직무와의 연결은 좋지만, 구체적 경험과 기여 포인트가 더해지면
+        설득력이 크게 높아집니다.
       </FeedbackBlock>
 
       <FeedbackBlock title="근거">
@@ -60,9 +61,10 @@ export function FeedbackSheet({ onNavigate, onSave }: FeedbackSheetProps) {
       </FeedbackBlock>
 
       <FeedbackBlock title="개선 예시" example>
-        &ldquo;데이터 기반 의사결정으로 고객 경험을 혁신하는 귀사의 방향에 공감했습니다. 학부
-        프로젝트에서 사용자 행동 데이터를 분석해 전환율을{' '}
-        <b className="text-blue-600">18%</b> 개선한 경험을 바탕으로 기여하고 싶습니다.&rdquo;
+        &ldquo;데이터 기반 의사결정으로 고객 경험을 혁신하는 귀사의 방향에
+        공감했습니다. 학부 프로젝트에서 사용자 행동 데이터를 분석해 전환율을{' '}
+        <b className="text-blue-600">18%</b> 개선한 경험을 바탕으로 기여하고
+        싶습니다.&rdquo;
       </FeedbackBlock>
 
       <FeedbackBlock title="세부 점수 (5점 만점)">
