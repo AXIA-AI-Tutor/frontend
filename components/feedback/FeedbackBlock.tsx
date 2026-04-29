@@ -6,7 +6,11 @@ interface FeedbackBlockProps {
   example?: boolean
 }
 
-export function FeedbackBlock({ title, children, example = false }: FeedbackBlockProps) {
+export function FeedbackBlock({
+  title,
+  children,
+  example = false,
+}: FeedbackBlockProps) {
   return (
     <div
       className={cn(
@@ -15,7 +19,9 @@ export function FeedbackBlock({ title, children, example = false }: FeedbackBloc
       )}
     >
       <h4 className="mb-1.5 text-[13px] font-black text-indigo-700">{title}</h4>
-      <div className="text-[11.6px] leading-snug text-slate-700">{children}</div>
+      <div className="text-[11.6px] leading-snug text-slate-700">
+        {children}
+      </div>
     </div>
   )
 }

@@ -15,7 +15,13 @@ import { screenData } from '@/lib/screenData'
 import type { Screen } from '@/types'
 
 // 화면별 사이드 패널 (왼쪽 흐름 설명 + 오른쪽 기능 설명)
-function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen }) {
+function SidePanel({
+  side,
+  screen,
+}: {
+  side: 'left' | 'right'
+  screen: Screen
+}) {
   const data = screenData[screen]
 
   if (side === 'left') {
@@ -35,10 +41,15 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
 
         {/* 흐름 예시 */}
         <section className="rounded-3xl border border-slate-200 bg-white/80 p-[18px] backdrop-blur-sm shadow-sm">
-          <h2 className="mb-3.5 flex items-center gap-2 text-base font-black">흐름 예시</h2>
+          <h2 className="mb-3.5 flex items-center gap-2 text-base font-black">
+            흐름 예시
+          </h2>
           <div className="flex flex-col gap-2.5">
             {data.flow.map(([icon, title, text], i) => (
-              <div key={i} className="relative grid grid-cols-[42px_1fr] items-center gap-2.5">
+              <div
+                key={i}
+                className="relative grid grid-cols-[42px_1fr] items-center gap-2.5"
+              >
                 {/* 점선 연결선 */}
                 {i < data.flow.length - 1 && (
                   <span className="absolute left-5 top-[43px] h-4 border-l-2 border-dashed border-slate-300" />
@@ -48,7 +59,9 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
                 </div>
                 <div>
                   <strong className="block text-[13px]">{title}</strong>
-                  <span className="block text-[12px] leading-snug text-slate-500">{text}</span>
+                  <span className="block text-[12px] leading-snug text-slate-500">
+                    {text}
+                  </span>
                 </div>
               </div>
             ))}
@@ -62,13 +75,18 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
           </h2>
           <div className="flex flex-col gap-2.5">
             {data.interactions.map(([icon, title, text], i) => (
-              <div key={i} className="grid grid-cols-[32px_1fr] items-start gap-2">
+              <div
+                key={i}
+                className="grid grid-cols-[32px_1fr] items-start gap-2"
+              >
                 <div className="grid h-8 w-8 place-items-center rounded-[11px] border border-slate-200 bg-slate-50 text-slate-700">
                   {icon}
                 </div>
                 <div>
                   <strong className="block text-[12.5px]">{title}</strong>
-                  <span className="block text-[11.5px] leading-snug text-slate-500">{text}</span>
+                  <span className="block text-[11.5px] leading-snug text-slate-500">
+                    {text}
+                  </span>
                 </div>
               </div>
             ))}
@@ -81,7 +99,9 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
   // 오른쪽 패널 — 기능 설명
   return (
     <aside className="rounded-3xl border border-slate-200 bg-white/80 p-5 backdrop-blur-sm shadow-sm">
-      <h2 className="mb-3.5 text-xl font-black tracking-tight">{data.legend}</h2>
+      <h2 className="mb-3.5 text-xl font-black tracking-tight">
+        {data.legend}
+      </h2>
       <div className="flex flex-col gap-2.5">
         {data.features.map(([icon, title, text], i) => (
           <div
@@ -93,8 +113,12 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
             </div>
             <div>
               <div className="text-[23px] leading-none">{icon}</div>
-              <h4 className="mb-1 mt-0.5 text-[15px] font-black text-indigo-700">{title}</h4>
-              <p className="text-[12.5px] leading-snug text-slate-500">{text}</p>
+              <h4 className="mb-1 mt-0.5 text-[15px] font-black text-indigo-700">
+                {title}
+              </h4>
+              <p className="text-[12.5px] leading-snug text-slate-500">
+                {text}
+              </p>
             </div>
           </div>
         ))}
@@ -105,7 +129,9 @@ function SidePanel({ side, screen }: { side: 'left' | 'right'; screen: Screen })
         <span className="text-2xl">💡</span>
         <div>
           <b className="block text-sm text-blue-700">TIP</b>
-          <p className="mt-0.5 text-xs leading-snug text-slate-600">{data.tip}</p>
+          <p className="mt-0.5 text-xs leading-snug text-slate-600">
+            {data.tip}
+          </p>
         </div>
       </div>
     </aside>

@@ -23,7 +23,11 @@ export function TurnChart({ onPointClick }: TurnChartProps) {
             'linear-gradient(180deg,transparent 24%,#edf2ff 25%,transparent 26%,transparent 49%,#edf2ff 50%,transparent 51%,transparent 74%,#edf2ff 75%,transparent 76%)',
         }}
       >
-        <svg className="absolute inset-0" viewBox="0 0 320 84" preserveAspectRatio="none">
+        <svg
+          className="absolute inset-0"
+          viewBox="0 0 320 84"
+          preserveAspectRatio="none"
+        >
           <polyline
             fill="none"
             stroke="#2563eb"

@@ -25,7 +25,7 @@ export function PhoneFrame({ isDark = false, children }: PhoneFrameProps) {
           className={`pointer-events-none absolute left-0 right-0 top-0 z-[4] flex justify-between px-5 pt-2.5 text-sm font-black ${isDark ? 'text-slate-800' : 'text-white'}`}
         >
           <span>9:41</span>
-          <span className="tracking-wider text-xs">▮▮▮  ᯤ  ▰</span>
+          <span className="tracking-wider text-xs">▮▮▮ ᯤ ▰</span>
         </div>
 
         {children}

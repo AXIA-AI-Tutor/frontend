@@ -30,7 +30,10 @@ export function Dropdown({ label, options, onSelect }: DropdownProps) {
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(v => !v) }}
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
         className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-2 py-2 text-xs font-bold text-slate-800"
       >
         {selected} <span>⌄</span>
