@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { HomeScreen } from '@/components/home/HomeScreen'
-import { PhoneFrame } from '@/components/layout/PhoneFrame'
-import { TopBar } from '@/components/layout/TopBar'
 import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
@@ -61,13 +59,9 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
       }}
     >
       <div className="mx-auto max-w-[1480px] px-6 pb-7 pt-5">
-        <TopBar current={current} onChange={navigate} />
-
         <main className="flex justify-center">
-          <section className="flex min-h-[760px] justify-center pt-1">
-            <PhoneFrame isDark={current === 'live'}>
-              {screenComponents[current]}
-            </PhoneFrame>
+          <section className="relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff]">
+            {screenComponents[current]}
           </section>
         </main>
       </div>
