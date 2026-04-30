@@ -19,7 +19,7 @@ interface BottomNavProps {
 export function BottomNav({ current, onNavigate }: BottomNavProps) {
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 z-[3] grid grid-cols-5 border-t border-slate-200 bg-white/92 px-2 pb-1.5 pt-2"
+      className="absolute bottom-0 left-0 right-0 z-[3] grid grid-cols-5 border-t border-slate-200 bg-white/92 px-2 pb-1.5 pt-2 lg:hidden"
       style={{ height: 68 }}
     >
       {NAV_ITEMS.map(({ icon, label, screen }) => (
