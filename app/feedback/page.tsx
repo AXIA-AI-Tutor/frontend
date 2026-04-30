@@ -1,1 +1,5 @@
-// 턴 피드백 화면
+import { PrototypeScreenPage } from '@/components/layout/PrototypeScreenPage'
+
+export default function FeedbackPage() {
+  return <PrototypeScreenPage current="feedback" />
+}
