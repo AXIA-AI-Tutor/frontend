@@ -7,14 +7,3 @@ export interface FeatureItem {
   title: string
   description: string
 }
-
-export interface ScreenData {
-  crumb: string
-  title: string
-  text: string
-  legend: string
-  tip: string
-  flow: [string, string, string][]
-  interactions: [string, string, string][]
-  features: [string, string, string][]
-}
