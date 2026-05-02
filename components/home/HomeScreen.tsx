@@ -35,7 +35,7 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
       <div className="lg:hidden">
         {/* 상단 그라디언트 헤더 */}
         <div
-          className="h-[190px] px-[18px] pt-12 text-white"
+          className="h-16 px-[18px] pt-2 text-white"
           style={{
             background:
               'linear-gradient(135deg,#2e96ff 0%,#3d72ff 42%,#7c3aed 100%)',
@@ -58,13 +58,20 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
               <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
             </div>
           </div>
-          <ModeSegment mode={mode} onChange={handleModeChange} />
+        </div>
+
+        <div className="px-[18px] pt-2">
+          <ModeSegment
+            mode={mode}
+            onChange={handleModeChange}
+            className="mt-0 border-slate-200 bg-white shadow-sm"
+          />
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
         <div
-          className="absolute left-3.5 right-3.5 overflow-auto pb-3"
-          style={{ top: 142, bottom: 70 }}
+          className="absolute left-3.5 right-3.5 overflow-auto pb-2"
+          style={{ top: 132, bottom: 70 }}
         >
           {/* 오늘의 연습 */}
           <div
@@ -90,11 +97,14 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
 
           {/* 자료 업로드 */}
           <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
-            <UploadGrid onUpload={(label) => onToast(`${label} 업로드 완료`)} />
+            <UploadGrid
+              onUpload={(label) => onToast(`${label} 업로드 완료`)}
+              onDelete={(label) => onToast(`${label} 삭제 완료`)}
+            />
           </div>
 
           {/* 세션 설정 */}
-          <div className="mb-2.5 overflow-hidden rounded-[18px] border border-slate-200 bg-white/92 shadow-sm">
+          <div className="relative z-20 mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 shadow-sm">
             <SessionOptions onSelect={(_, val) => onToast(`${val} 선택됨`)} />
           </div>
 
@@ -108,7 +118,7 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
           </div>
 
           {/* 지난 세션 요약 */}
-          <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
+          <div className="mb-1.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
             <SessionSummary onNavigate={onNavigate} />
           </div>
 
@@ -152,7 +162,7 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
       </div>
 
       <div className="hidden lg:block">
-        <div className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_360px]">
+        <div className="space-y-4">
           <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between gap-6">
               <div className="max-w-2xl">
@@ -171,85 +181,84 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
                 <ModeSegment mode={mode} onChange={handleModeChange} />
               </div>
             </div>
-
-            <div className="mt-6 grid gap-4 xl:grid-cols-[1.1fr_.9fr]">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <UploadCloud className="text-blue-600" size={20} />
-                  <h3 className="text-base font-black text-slate-950">
-                    자료 업로드
-                  </h3>
-                </div>
-                <UploadGrid
-                  onUpload={(label) => onToast(`${label} 업로드 완료`)}
-                />
-              </div>
-
-              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-                  <ClipboardList className="text-blue-600" size={20} />
-                  <h3 className="text-base font-black text-slate-950">
-                    세션 설정
-                  </h3>
-                </div>
-                <SessionOptions
-                  onSelect={(_, val) => onToast(`${val} 선택됨`)}
-                />
-              </div>
-            </div>
           </section>
 
-          <aside className="space-y-4">
-            <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
+            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <UploadCloud className="text-blue-600" size={20} />
+                <h3 className="text-base font-black text-slate-950">
+                  자료 업로드
+                </h3>
+              </div>
+              <UploadGrid
+                onUpload={(label) => onToast(`${label} 업로드 완료`)}
+                onDelete={(label) => onToast(`${label} 삭제 완료`)}
+              />
+            </section>
+
+            <aside className="rounded-lg border border-slate-200 bg-white shadow-sm [&>div]:h-full">
               <AvatarCard
                 onChangeAvatar={(name) =>
                   onToast(`${name}(으)로 변경되었습니다.`)
                 }
               />
-            </div>
+            </aside>
 
-            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700">
-                <ShieldCheck size={20} />
-              </span>
-              <div className="flex-1">
-                <b className="block text-sm text-slate-950">프라이버시 설정</b>
-                <span className="block text-xs text-slate-500">
-                  {privacy
-                    ? '원본 영상은 저장하지 않아요'
-                    : '원본 영상 저장 옵션 확인 필요'}
-                </span>
+            <section className="relative z-20 rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                <ClipboardList className="text-blue-600" size={20} />
+                <h3 className="text-base font-black text-slate-950">
+                  세션 설정
+                </h3>
               </div>
-              <Toggle
-                on={privacy}
-                onChange={() => {
-                  setPrivacy((v) => !v)
-                  onToast('프라이버시 설정이 변경되었습니다.')
-                }}
-                ariaLabel="프라이버시 토글"
-              />
-            </div>
-          </aside>
-        </div>
+              <SessionOptions onSelect={(_, val) => onToast(`${val} 선택됨`)} />
+            </section>
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <aside className="grid h-full gap-1.5">
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
+                <span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700">
+                  <ShieldCheck size={20} />
+                </span>
+                <div className="flex-1">
+                  <b className="block text-sm text-slate-950">
+                    프라이버시 설정
+                  </b>
+                  <span className="block text-xs text-slate-500">
+                    {privacy
+                      ? '원본 영상은 저장하지 않아요'
+                      : '원본 영상 저장 옵션 확인 필요'}
+                  </span>
+                </div>
+                <Toggle
+                  on={privacy}
+                  onChange={() => {
+                    setPrivacy((v) => !v)
+                    onToast('프라이버시 설정이 변경되었습니다.')
+                  }}
+                  ariaLabel="프라이버시 토글"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => onNavigate('live')}
+                className="flex min-h-16 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
+              >
+                <span>
+                  <span className="block text-md font-black">연습 시작</span>
+                  <span className="block text-xs text-blue-100">
+                    설정한 자료와 목표로 실시간 연습을 시작합니다.
+                  </span>
+                </span>
+                <ArrowRight size={24} />
+              </button>
+            </aside>
+          </div>
+
+          <section className="rounded-lg border border-slate-200 bg-white px-5 py-3 shadow-sm">
             <SessionSummary onNavigate={onNavigate} />
           </section>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('live')}
-            className="flex min-h-24 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
-          >
-            <span>
-              <span className="block text-lg font-black">연습 시작</span>
-              <span className="mt-1 block text-sm text-blue-100">
-                설정한 자료와 목표로 실시간 연습을 시작합니다.
-              </span>
-            </span>
-            <ArrowRight size={24} />
-          </button>
         </div>
       </div>
     </>

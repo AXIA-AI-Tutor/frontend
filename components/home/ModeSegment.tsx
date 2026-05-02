@@ -6,11 +6,17 @@ import type { Mode } from '@/types'
 interface ModeSegmentProps {
   mode: Mode
   onChange: (mode: Mode) => void
+  className?: string
 }
 
-export function ModeSegment({ mode, onChange }: ModeSegmentProps) {
+export function ModeSegment({ mode, onChange, className }: ModeSegmentProps) {
   return (
-    <div className="mt-4 grid grid-cols-2 gap-1 rounded-[18px] border border-white/70 bg-white/70 p-[5px]">
+    <div
+      className={cn(
+        'mt-4 grid grid-cols-2 gap-1 rounded-[18px] border border-white/70 bg-white/70 p-[5px]',
+        className
+      )}
+    >
       {(['면접', '발표'] as Mode[]).map((m) => (
         <button
           key={m}
