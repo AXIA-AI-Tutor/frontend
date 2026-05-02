@@ -123,7 +123,7 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
         </header>
 
         <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-6 lg:pt-5">
-          <aside className="hidden min-h-[calc(100vh-132px)] flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-sm lg:flex">
+          <aside className="hidden flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-sm lg:flex">
             <div className="mb-4 rounded-lg bg-slate-50 p-3">
               <strong className="block text-sm text-slate-950">
                 연습 워크스페이스
@@ -160,7 +160,7 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
           </aside>
 
           <main className="flex justify-center lg:block">
-            <section className="relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:min-h-[calc(100vh-132px)] lg:max-w-none lg:overflow-visible lg:bg-transparent">
+            <section className="relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:min-h-0 lg:max-w-none lg:overflow-visible lg:bg-transparent">
               {screenComponents[current]}
             </section>
           </main>
