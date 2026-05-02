@@ -160,7 +160,14 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
           </aside>
 
           <main className="flex justify-center lg:block">
-            <section className="relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:min-h-0 lg:max-w-none lg:overflow-visible lg:bg-transparent">
+            <section
+              className={cn(
+                'relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:max-w-none lg:overflow-visible lg:bg-transparent',
+                current === 'home'
+                  ? 'lg:min-h-0'
+                  : 'lg:min-h-[calc(100vh-132px)]'
+              )}
+            >
               {screenComponents[current]}
             </section>
           </main>
