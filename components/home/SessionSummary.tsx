@@ -1,6 +1,7 @@
 'use client'
 
 import type { Screen } from '@/types'
+import { Archive, ChevronRight } from 'lucide-react'
 
 interface SessionSummaryProps {
   onNavigate: (screen: Screen) => void
@@ -13,12 +14,17 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
         className="flex items-center justify-between"
         style={{ fontSize: 15 }}
       >
-        <h3 className="font-bold">지난 세션 요약</h3>
+        <div className="flex items-center gap-2">
+          <Archive className="text-blue-600" size={20} />
+          <h3 className="text-base font-black text-slate-950">
+            지난 세션 요약
+          </h3>
+        </div>
         <button
           onClick={() => onNavigate('report')}
-          className="rounded-full border border-slate-200 bg-white px-2 py-1 text-xs font-black text-slate-700"
+          className="flex px-2 text-xs font-black text-slate-700"
         >
-          자세히 보기 ›
+          자세히 보기 <ChevronRight size={14} />
         </button>
       </div>
       <div className="mt-[9px] grid grid-cols-3 border-t border-slate-100 pt-2.5 text-center">
