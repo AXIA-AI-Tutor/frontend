@@ -9,8 +9,9 @@ export function TranscriptCard() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="mb-2.5 w-full rounded-[18px] border border-slate-200 bg-white p-[13px] text-left shadow-sm"
+        className="mb-2.5 w-full rounded-[18px] border border-slate-200 bg-white p-[13px] text-left shadow-sm lg:mb-0 lg:rounded-lg lg:p-4"
       >
         <h3 className="mb-2 flex items-center justify-between text-base font-black">
           실시간 자막
@@ -40,6 +41,7 @@ export function TranscriptCard() {
           향상시켰고, 그 과정에서 데이터 정제와 모델 검증을 담당했습니다.
         </p>
         <button
+          type="button"
           onClick={() => setOpen(false)}
           className="mt-2.5 w-full rounded-[14px] border-0 bg-gradient-to-r from-blue-600 to-purple-700 py-3 font-black text-white"
         >
