@@ -26,7 +26,11 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
   const [mode, setMode] = useState<Mode>('면접')
   const [privacy, setPrivacy] = useState(true)
   const user = useAuthStore((state) => state.user)
-  const profileName = user?.name || user?.email || '사용자'
+  const authStatus = useAuthStore((state) => state.status)
+  const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
+  const profileName = isAuthenticated
+    ? user?.name || user?.email || '사용자'
+    : 'Guest'
   const profileInitial = profileName.slice(0, 1).toUpperCase()
 
   const handleModeChange = (m: Mode) => {
@@ -61,7 +65,9 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
               <span className="text-base font-black text-blue-700">
                 {profileInitial}
               </span>
-              <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+              {isAuthenticated ? (
+                <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
+              ) : null}
             </div>
           </div>
         </div>

@@ -63,6 +63,7 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   const router = useRouter()
   const [toast, setToast] = useState({ show: false, message: '' })
   const user = useAuthStore((state) => state.user)
+  const authStatus = useAuthStore((state) => state.status)
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -87,7 +88,11 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   }
 
   const currentNav = DESKTOP_NAV_ITEMS.find((item) => item.screen === current)
-  const userDisplayName = user?.name || user?.email || '사용자'
+  const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
+  const userDisplayName = isAuthenticated
+    ? user?.name || user?.email || '사용자'
+    : '게스트'
+  const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
 
   return (
     <AuthGate>
@@ -115,7 +120,7 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
                   {userDisplayName}
                 </strong>
                 <span className="block text-xs font-bold text-slate-400">
-                  로그인됨
+                  {authStatusLabel}
                 </span>
               </div>
               <button
