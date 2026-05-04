@@ -7,11 +7,16 @@ import { Camera, CameraOff, Video } from 'lucide-react'
 interface LiveCameraGuideProps {
   className?: string
   controls?: ReactNode
+  compact?: boolean
 }
 
 type CameraStatus = 'idle' | 'ready' | 'blocked' | 'unsupported'
 
-export function LiveCameraGuide({ className, controls }: LiveCameraGuideProps) {
+export function LiveCameraGuide({
+  className,
+  controls,
+  compact = false,
+}: LiveCameraGuideProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [status, setStatus] = useState<CameraStatus>('idle')
   const [enabled, setEnabled] = useState(true)
@@ -78,17 +83,25 @@ export function LiveCameraGuide({ className, controls }: LiveCameraGuideProps) {
     <section
       className={[
         'overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm',
+        compact ? 'h-[220px]' : '',
         className,
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <div className="relative z-10 flex items-center justify-between border-b border-slate-100 bg-white px-4 py-3">
+      <div
+        className={[
+          'relative z-10 flex items-center justify-between border-b border-slate-100 bg-white',
+          compact ? 'px-3 py-2' : 'px-4 py-3',
+        ].join(' ')}
+      >
         <div>
           <h3 className="text-sm font-black text-slate-950">카메라 정렬</h3>
-          <p className="mt-0.5 text-xs font-bold text-slate-400">
-            얼굴과 어깨를 가이드 안에 맞춰주세요.
-          </p>
+          {compact ? null : (
+            <p className="mt-0.5 text-xs font-bold text-slate-400">
+              얼굴과 어깨를 가이드 안에 맞춰주세요.
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {controls}
@@ -104,7 +117,12 @@ export function LiveCameraGuide({ className, controls }: LiveCameraGuideProps) {
         </div>
       </div>
 
-      <div className="relative aspect-video overflow-hidden bg-slate-950">
+      <div
+        className={[
+          'relative overflow-hidden bg-slate-950',
+          compact ? 'h-[166px]' : 'aspect-video',
+        ].join(' ')}
+      >
         <video
           ref={videoRef}
           className="h-full w-full scale-x-[-1] object-cover"

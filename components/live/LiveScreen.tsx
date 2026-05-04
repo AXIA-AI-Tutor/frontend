@@ -15,6 +15,21 @@ interface LiveScreenProps {
   onToast: (msg: string) => void
 }
 
+const LIVE_TURNS = [
+  {
+    question: '자기소개와 지원 동기를 1분 안에 말해보세요.',
+    hint: '성과는 구체적인 수치(%, 금액, 기간 등)로 제시하면 신뢰도가 높아져요.',
+  },
+  {
+    question: '최근 프로젝트에서 맡았던 역할과 성과를 설명해 주세요.',
+    hint: '상황, 맡은 일, 실행한 행동, 결과 순서로 답변하면 흐름이 선명해져요.',
+  },
+  {
+    question: '협업 중 의견 충돌을 해결했던 경험을 말해보세요.',
+    hint: '상대의 관점을 어떻게 확인했고 합의점을 어떻게 만들었는지 포함해보세요.',
+  },
+] as const
+
 function pad(n: number) {
   return String(n).padStart(2, '0')
 }
@@ -28,6 +43,8 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   const [fillers, setFillers] = useState(1)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
+  const [turnIndex, setTurnIndex] = useState(0)
+  const [isAnswerLayout, setIsAnswerLayout] = useState(false)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -47,9 +64,67 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   }, [isRecording])
 
   const timeStr = `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
-  const question = '자기소개와 지원 동기를 1분 안에 말해보세요.'
-  const hint =
-    '성과는 구체적인 수치(%, 금액, 기간 등)로 제시하면 신뢰도가 높아져요.'
+  const { question, hint } = LIVE_TURNS[turnIndex]
+
+  const handleStart = () => {
+    setIsRecording(true)
+    setIsAnswerLayout(true)
+    setShowStartGuide(false)
+    onToast('연습을 시작합니다.')
+  }
+
+  const handleStop = () => {
+    setIsRecording(false)
+    onToast('연습이 중지되었습니다.')
+  }
+
+  const handleRestart = () => {
+    setSeconds(0)
+    setIsRecording(true)
+    setIsAnswerLayout(true)
+    setShowStartGuide(false)
+    setWaveformResetSignal((signal) => signal + 1)
+    onToast('현재 질문을 다시 시작합니다.')
+  }
+
+  const handleNextTurn = () => {
+    setTurnIndex((index) => (index + 1) % LIVE_TURNS.length)
+    setSeconds(0)
+    setIsRecording(false)
+    setIsAnswerLayout(false)
+    setShowStartGuide(false)
+    setWaveformResetSignal((signal) => signal + 1)
+    onToast('다음 질문을 준비합니다.')
+  }
+
+  const coachAvatar = (
+    <CoachAvatarLive
+      question={question}
+      hint={hint}
+      onHintApply={() => onToast('힌트가 현재 답변 목표에 적용되었습니다.')}
+      featured={isAnswerLayout}
+      compact={!isAnswerLayout}
+    />
+  )
+
+  const mobileCamera = <LiveCameraGuide compact={isAnswerLayout} />
+
+  const desktopControls = (
+    <LiveControls
+      iconOnly
+      isRecording={isRecording}
+      showStartGuide={showStartGuide}
+      onDismissStartGuide={() => setShowStartGuide(false)}
+      onStart={handleStart}
+      onStop={handleStop}
+      onRestart={handleRestart}
+      onNext={handleNextTurn}
+    />
+  )
+
+  const desktopCamera = (
+    <LiveCameraGuide controls={desktopControls} compact={isAnswerLayout} />
+  )
 
   return (
     <>
@@ -58,13 +133,19 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
 
         {/* 콘텐츠 */}
         <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3">
-          <CoachAvatarLive
-            question={question}
-            hint={hint}
-            onHintApply={() =>
-              onToast('힌트가 현재 답변 목표에 적용되었습니다.')
-            }
-          />
+          <div className="mb-2.5 space-y-2.5">
+            {isAnswerLayout ? (
+              <>
+                {coachAvatar}
+                {mobileCamera}
+              </>
+            ) : (
+              <>
+                {mobileCamera}
+                {coachAvatar}
+              </>
+            )}
+          </div>
           <LiveMetrics
             duration={timeStr}
             totalDuration="01:00"
@@ -82,23 +163,10 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
             isRecording={isRecording}
             showStartGuide={showStartGuide}
             onDismissStartGuide={() => setShowStartGuide(false)}
-            onStart={() => {
-              setIsRecording(true)
-              setShowStartGuide(false)
-              onToast('연습을 시작합니다.')
-            }}
-            onStop={() => {
-              setIsRecording(false)
-              onToast('연습이 중지되었습니다.')
-            }}
-            onRestart={() => {
-              setSeconds(0)
-              setIsRecording(true)
-              setShowStartGuide(false)
-              setWaveformResetSignal((signal) => signal + 1)
-              onToast('현재 질문을 다시 시작합니다.')
-            }}
-            onNext={() => onNavigate('feedback')}
+            onStart={handleStart}
+            onStop={handleStop}
+            onRestart={handleRestart}
+            onNext={handleNextTurn}
           />
         </div>
 
@@ -111,45 +179,12 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-4">
-              <LiveCameraGuide
-                controls={
-                  <LiveControls
-                    iconOnly
-                    isRecording={isRecording}
-                    showStartGuide={showStartGuide}
-                    onDismissStartGuide={() => setShowStartGuide(false)}
-                    onStart={() => {
-                      setIsRecording(true)
-                      setShowStartGuide(false)
-                      onToast('연습을 시작합니다.')
-                    }}
-                    onStop={() => {
-                      setIsRecording(false)
-                      onToast('연습이 중지되었습니다.')
-                    }}
-                    onRestart={() => {
-                      setSeconds(0)
-                      setIsRecording(true)
-                      setShowStartGuide(false)
-                      setWaveformResetSignal((signal) => signal + 1)
-                      onToast('현재 질문을 다시 시작합니다.')
-                    }}
-                    onNext={() => onNavigate('feedback')}
-                  />
-                }
-              />
+              {isAnswerLayout ? coachAvatar : desktopCamera}
               <TranscriptCard />
             </div>
 
             <aside className="space-y-4 min-w-0">
-              <CoachAvatarLive
-                question={question}
-                hint={hint}
-                onHintApply={() =>
-                  onToast('힌트가 현재 답변 목표에 적용되었습니다.')
-                }
-                compact
-              />
+              {isAnswerLayout ? desktopCamera : coachAvatar}
               <LiveMetrics
                 duration={timeStr}
                 totalDuration="01:00"
@@ -240,8 +275,8 @@ function LiveControls({
           type="button"
           onClick={onNext}
           className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700"
-          aria-label="다음 피드백으로 이동"
-          title="다음"
+          aria-label="다음 질문으로 이동"
+          title="다음 질문"
         >
           <SkipForward size={15} />
         </button>
