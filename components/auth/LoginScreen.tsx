@@ -11,10 +11,36 @@ import {
 } from 'lucide-react'
 
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
+import {
+  AUTH_REDIRECT_STORAGE_KEY,
+  AUTH_ROUTE_GUARD_COOKIE_NAME,
+  getRedirectPathFromSearch,
+} from '@/lib/auth/routes'
 import { getGoogleOAuthAuthorizationUrl } from '@/lib/api/auth'
 import { selectIsAuthChecking, useAuthStore } from '@/lib/stores/auth'
 
 const CHECK_ITEMS = ['세션 기록 이어보기', '맞춤 피드백 저장', '연습 자료 관리']
+
+function getRequestedRedirectPath() {
+  return getRedirectPathFromSearch(window.location.search)
+}
+
+function storeRequestedRedirectPath() {
+  const redirectPath = getRequestedRedirectPath()
+
+  try {
+    window.sessionStorage.setItem(AUTH_REDIRECT_STORAGE_KEY, redirectPath)
+  } catch {
+    return
+  }
+}
+
+function writePendingRouteGuardCookie() {
+  const secureAttribute =
+    window.location.protocol === 'https:' ? '; Secure' : ''
+
+  document.cookie = `${AUTH_ROUTE_GUARD_COOKIE_NAME}=1; Path=/; Max-Age=300; SameSite=Lax${secureAttribute}`
+}
 
 export function LoginScreen() {
   const router = useRouter()
@@ -33,7 +59,7 @@ export function LoginScreen() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      router.replace('/')
+      router.replace(getRequestedRedirectPath())
     }
   }, [router, status])
 
@@ -42,6 +68,8 @@ export function LoginScreen() {
     setLoginErrorMessage('')
     setIsStartingLogin(true)
     markLoginRedirectStarted()
+    storeRequestedRedirectPath()
+    writePendingRouteGuardCookie()
 
     try {
       window.location.assign(getGoogleOAuthAuthorizationUrl())
