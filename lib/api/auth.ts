@@ -20,16 +20,46 @@ export function getGoogleOAuthAuthorizationUrl() {
   return `${getApiBaseUrl()}/oauth2/authorization/google`
 }
 
-export async function fetchCurrentUser() {
-  const response = await fetch(`${getApiBaseUrl()}/api/users/me`, {
+export async function logoutCurrentUser() {
+  const response = await fetch(`${getApiBaseUrl()}/logout`, {
     cache: 'no-store',
     credentials: 'include',
+    redirect: 'manual',
     headers: {
       Accept: 'application/json',
     },
   })
 
+  if (response.ok || response.type === 'opaqueredirect') {
+    return
+  }
+
+  if (response.status === 401) {
+    return
+  }
+
+  throw new Error('로그아웃하지 못했습니다.')
+}
+
+export async function fetchCurrentUser() {
+  const response = await fetch(`${getApiBaseUrl()}/api/users/me`, {
+    cache: 'no-store',
+    credentials: 'include',
+    redirect: 'manual',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (response.type === 'opaqueredirect') {
+    return null
+  }
+
   if (response.status === 401 || response.status === 403) {
+    return null
+  }
+
+  if (response.status >= 300 && response.status < 400) {
     return null
   }
 

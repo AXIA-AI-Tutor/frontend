@@ -4,6 +4,8 @@ import { useState } from 'react'
 import {
   ArrowRight,
   ClipboardList,
+  Loader2,
+  LogOut,
   ShieldCheck,
   UploadCloud,
 } from 'lucide-react'
@@ -18,11 +20,18 @@ import { useAuthStore } from '@/lib/stores/auth'
 import type { Mode, Screen } from '@/types'
 
 interface HomeScreenProps {
+  isLoggingOut: boolean
+  onLogout: () => void
   onNavigate: (screen: Screen) => void
   onToast: (msg: string) => void
 }
 
-export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
+export function HomeScreen({
+  isLoggingOut,
+  onLogout,
+  onNavigate,
+  onToast,
+}: HomeScreenProps) {
   const [mode, setMode] = useState<Mode>('면접')
   const [privacy, setPrivacy] = useState(true)
   const user = useAuthStore((state) => state.user)
@@ -61,14 +70,26 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
               </span>
             </div>
             {/* 프로필 아이콘 */}
-            <div className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 shadow-lg">
+            <button
+              type="button"
+              onClick={isAuthenticated ? onLogout : undefined}
+              disabled={!isAuthenticated || isLoggingOut}
+              className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 text-blue-700 shadow-lg disabled:cursor-default"
+              aria-label={isAuthenticated ? '로그아웃' : '게스트 프로필'}
+            >
               <span className="text-base font-black text-blue-700">
-                {profileInitial}
+                {isLoggingOut ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : isAuthenticated ? (
+                  <LogOut size={18} />
+                ) : (
+                  profileInitial
+                )}
               </span>
               {isAuthenticated ? (
                 <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
               ) : null}
-            </div>
+            </button>
           </div>
         </div>
 
