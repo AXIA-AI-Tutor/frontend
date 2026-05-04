@@ -1,13 +1,11 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, RotateCcw } from 'lucide-react'
 
+import { createLoginRedirectPath } from '@/lib/auth/routes'
 import { selectIsAuthChecking, useAuthStore } from '@/lib/stores/auth'
-
-const ENABLE_AUTH_ROUTE_GUARD =
-  process.env.NEXT_PUBLIC_ENABLE_AUTH_ROUTE_GUARD === 'true'
 
 interface AuthGateProps {
   children: React.ReactNode
@@ -20,19 +18,17 @@ export function AuthGate({ children }: AuthGateProps) {
   const refreshCurrentUser = useAuthStore((state) => state.refreshCurrentUser)
   const isCheckingSession = selectIsAuthChecking(status)
 
+  const navigateToLogin = useCallback(() => {
+    router.replace(
+      createLoginRedirectPath(window.location.pathname, window.location.search)
+    )
+  }, [router])
+
   useEffect(() => {
-    if (!ENABLE_AUTH_ROUTE_GUARD) {
-      return
-    }
-
     if (status === 'unauthenticated') {
-      router.replace('/login')
+      navigateToLogin()
     }
-  }, [router, status])
-
-  if (!ENABLE_AUTH_ROUTE_GUARD) {
-    return children
-  }
+  }, [navigateToLogin, status])
 
   if (status === 'authenticated') {
     return children
@@ -57,7 +53,7 @@ export function AuthGate({ children }: AuthGateProps) {
             </button>
             <button
               type="button"
-              onClick={() => router.replace('/login')}
+              onClick={navigateToLogin}
               className="h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 focus:outline-none focus:ring-4 focus:ring-slate-100"
             >
               로그인 화면으로
