@@ -1,15 +1,82 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ArrowRight,
   CheckCircle2,
+  Loader2,
   MessageSquareText,
   ShieldCheck,
 } from 'lucide-react'
 
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
+import {
+  fetchCurrentUser,
+  getGoogleOAuthAuthorizationUrl,
+} from '@/lib/api/auth'
 
 const CHECK_ITEMS = ['세션 기록 이어보기', '맞춤 피드백 저장', '연습 자료 관리']
 
 export function LoginScreen() {
+  const router = useRouter()
+  const [isCheckingSession, setIsCheckingSession] = useState(true)
+  const [isStartingLogin, setIsStartingLogin] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function checkSession() {
+      try {
+        const user = await fetchCurrentUser()
+
+        if (!isMounted) {
+          return
+        }
+
+        if (user) {
+          router.replace('/')
+          return
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : '로그인 상태를 확인하지 못했습니다.'
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsCheckingSession(false)
+        }
+      }
+    }
+
+    checkSession()
+
+    return () => {
+      isMounted = false
+    }
+  }, [router])
+
+  const handleGoogleLogin = useCallback(() => {
+    setErrorMessage('')
+    setIsStartingLogin(true)
+
+    try {
+      window.location.assign(getGoogleOAuthAuthorizationUrl())
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Google 로그인을 시작하지 못했습니다.'
+      )
+      setIsStartingLogin(false)
+    }
+  }, [])
+
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-5 sm:px-6 lg:px-8">
@@ -37,16 +104,35 @@ export function LoginScreen() {
 
             <button
               type="button"
+              onClick={handleGoogleLogin}
+              disabled={isCheckingSession || isStartingLogin}
               className="flex h-[52px] w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-4 text-left text-sm font-black text-slate-900 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-100"
             >
               <span className="flex min-w-0 items-center gap-3">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-[17px] font-black text-blue-600">
                   G
                 </span>
-                <span className="truncate">Google로 계속하기</span>
+                <span className="truncate">
+                  {isStartingLogin
+                    ? 'Google 로그인으로 이동 중'
+                    : 'Google로 계속하기'}
+                </span>
               </span>
-              <ArrowRight className="shrink-0 text-slate-400" size={18} />
+              {isCheckingSession || isStartingLogin ? (
+                <Loader2
+                  className="shrink-0 animate-spin text-slate-400"
+                  size={18}
+                />
+              ) : (
+                <ArrowRight className="shrink-0 text-slate-400" size={18} />
+              )}
             </button>
+
+            {errorMessage ? (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold leading-5 text-red-700">
+                {errorMessage}
+              </p>
+            ) : null}
 
             <div className="mt-5 grid gap-2">
               {CHECK_ITEMS.map((item) => (
