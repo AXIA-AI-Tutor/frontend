@@ -31,11 +31,20 @@ export function SessionOptions({ onSelect }: SessionOptionsProps) {
       </div>
       <div className="px-3 py-3">
         <small className="mb-[7px] flex items-center gap-1 text-[11px] font-black text-slate-700">
-          ◎ 연습 목적
+          ◎ 지원 직무
         </small>
         <Dropdown
-          label="실전 대비"
-          options={['실전 대비', '면접 합격', '발표 대비']}
+          label="BACKEND"
+          options={[
+            'BACKEND',
+            'FRONTEND',
+            'FULLSTACK',
+            'AI_ML',
+            'DATA',
+            'DEVOPS',
+            'MOBILE',
+            'QA',
+          ]}
           onSelect={(v) => onSelect?.('purpose', v)}
         />
       </div>
