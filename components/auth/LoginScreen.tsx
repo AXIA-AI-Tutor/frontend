@@ -20,13 +20,10 @@ export function LoginScreen() {
             </span>
             <span className="text-lg font-black tracking-tight">AI 코치</span>
           </div>
-          <span className="hidden rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 shadow-sm sm:inline-flex">
-            Google 세션 로그인
-          </span>
         </header>
 
-        <section className="grid flex-1 items-center gap-8 py-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(460px,1fr)] lg:py-12">
-          <div className="mx-auto w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <section className="grid flex-1 content-start items-start gap-8 py-6 lg:grid-cols-2 lg:py-12">
+          <div className="mx-auto w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:mx-0 lg:max-w-none lg:p-7">
             <div className="mb-6">
               <p className="text-sm font-bold text-blue-600">로그인</p>
               <h1 className="mt-2 text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl">
@@ -75,9 +72,9 @@ export function LoginScreen() {
             </div>
           </div>
 
-          <aside className="hidden min-h-[560px] overflow-hidden rounded-lg border border-slate-200 bg-[#101827] text-white shadow-sm lg:block">
-            <div className="grid h-full grid-rows-[auto_1fr_auto]">
-              <div className="border-b border-white/10 px-6 py-5">
+          <aside className="hidden overflow-hidden rounded-lg border border-slate-200 bg-[#101827] text-white shadow-sm lg:block">
+            <div className="grid grid-rows-[auto_auto_auto]">
+              <div className="border-b border-white/10 px-6 py-6">
                 <p className="text-sm font-bold text-blue-200">
                   Practice workspace
                 </p>
@@ -86,13 +83,13 @@ export function LoginScreen() {
                 </h2>
               </div>
 
-              <div className="relative px-8 py-8">
+              <div className="relative px-8">
                 <div className="absolute left-0 top-12 h-px w-full bg-white/10" />
                 <div className="absolute bottom-24 left-0 h-px w-full bg-white/10" />
                 <div className="absolute left-14 top-0 h-full w-px bg-white/10" />
                 <div className="absolute right-20 top-0 h-full w-px bg-white/10" />
 
-                <div className="relative flex h-full flex-col justify-between">
+                <div className="relative flex flex-col gap-5">
                   <div className="flex items-start justify-between gap-8">
                     <div className="max-w-xs">
                       <span className="inline-flex rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-black text-white">
@@ -107,7 +104,7 @@ export function LoginScreen() {
                     </div>
                   </div>
 
-                  <div className="grid gap-3">
+                  <div className="grid gap-2.5">
                     <div className="h-2 w-32 rounded-full bg-emerald-400" />
                     <div className="h-2 w-56 rounded-full bg-white/70" />
                     <div className="h-2 w-44 rounded-full bg-blue-300" />
@@ -115,7 +112,7 @@ export function LoginScreen() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 border-t border-white/10">
+              <div className="grid grid-cols-3 border-t pb-6 border-white/10">
                 {[
                   ['82점', '최근 점수'],
                   ['3개', '추천 과제'],
@@ -123,7 +120,7 @@ export function LoginScreen() {
                 ].map(([value, label]) => (
                   <div
                     key={label}
-                    className="border-r border-white/10 p-5 last:border-r-0"
+                    className="border-r border-white/10 p-4 last:border-r-0"
                   >
                     <strong className="block text-2xl font-black">
                       {value}
