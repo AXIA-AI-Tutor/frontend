@@ -6,6 +6,8 @@ import {
   BarChart3,
   Bell,
   Home,
+  Loader2,
+  LogOut,
   MessageSquareText,
   Mic,
   Settings,
@@ -62,8 +64,10 @@ interface PrototypeScreenPageProps {
 export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   const router = useRouter()
   const [toast, setToast] = useState({ show: false, message: '' })
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
+  const logout = useAuthStore((state) => state.logout)
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -80,8 +84,35 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
     [router]
   )
 
+  const handleLogout = useCallback(async () => {
+    if (isLoggingOut) {
+      return
+    }
+
+    setIsLoggingOut(true)
+
+    try {
+      await logout()
+      router.replace('/login')
+      router.refresh()
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : '로그아웃하지 못했습니다.'
+      )
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }, [isLoggingOut, logout, router, showToast])
+
   const screenComponents: Record<Screen, React.ReactNode> = {
-    home: <HomeScreen onNavigate={navigate} onToast={showToast} />,
+    home: (
+      <HomeScreen
+        isLoggingOut={isLoggingOut}
+        onLogout={handleLogout}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
     live: <LiveScreen onNavigate={navigate} onToast={showToast} />,
     feedback: <FeedbackScreen onNavigate={navigate} onToast={showToast} />,
     report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
@@ -137,6 +168,21 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
               >
                 <Settings size={18} />
               </button>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  disabled={isLoggingOut}
+                  className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-wait disabled:opacity-60"
+                  aria-label="로그아웃"
+                >
+                  {isLoggingOut ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <LogOut size={18} />
+                  )}
+                </button>
+              ) : null}
             </div>
           </header>
 

@@ -2,7 +2,11 @@
 
 import { create } from 'zustand'
 
-import { fetchCurrentUser, type CurrentUser } from '@/lib/api/auth'
+import {
+  fetchCurrentUser,
+  logoutCurrentUser,
+  type CurrentUser,
+} from '@/lib/api/auth'
 
 export type AuthStatus =
   | 'idle'
@@ -17,6 +21,7 @@ interface AuthState {
   errorMessage: string
   initialize: () => Promise<void>
   refreshCurrentUser: () => Promise<CurrentUser | null>
+  logout: () => Promise<void>
   markLoginRedirectStarted: () => void
   clearSession: () => void
   clearError: () => void
@@ -68,6 +73,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ user: null, status: 'error', errorMessage })
       return null
+    }
+  },
+
+  logout: async () => {
+    const previousState = get()
+
+    set({ status: 'loading', errorMessage: '' })
+
+    try {
+      await logoutCurrentUser()
+      set({ user: null, status: 'unauthenticated', errorMessage: '' })
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : '로그아웃하지 못했습니다.'
+
+      set({
+        user: previousState.user,
+        status: previousState.status,
+        errorMessage,
+      })
+      throw error
     }
   },
 
