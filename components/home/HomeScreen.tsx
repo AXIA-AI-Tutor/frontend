@@ -155,29 +155,6 @@ export function HomeScreen({
             <SessionSummary onNavigate={onNavigate} />
           </div>
 
-          {/* 프라이버시 설정 */}
-          <div className="mb-2.5 flex items-center gap-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
-            <span className="grid h-9 w-9 place-items-center rounded-[14px] bg-blue-50 text-blue-700">
-              🛡
-            </span>
-            <div className="flex-1">
-              <b className="block text-[13px]">프라이버시 설정</b>
-              <span className="block text-[11px] text-slate-500">
-                {privacy
-                  ? '원본 영상은 저장하지 않아요'
-                  : '원본 영상 저장 옵션 확인 필요'}
-              </span>
-            </div>
-            <Toggle
-              on={privacy}
-              onChange={() => {
-                setPrivacy((v) => !v)
-                onToast('프라이버시 설정이 변경되었습니다.')
-              }}
-              ariaLabel="프라이버시 토글"
-            />
-          </div>
-
           {/* 연습 시작 CTA */}
           <button
             onClick={() => onNavigate('live')}
@@ -217,66 +194,48 @@ export function HomeScreen({
           </section>
 
           <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <UploadCloud className="text-blue-600" size={20} />
-                <h3 className="text-base font-black text-slate-950">
-                  자료 업로드
-                </h3>
-              </div>
-              <UploadGrid
-                onUpload={(label) => onToast(`${label} 업로드 완료`)}
-                onDelete={(label) => onToast(`${label} 삭제 완료`)}
-              />
-            </section>
-
-            <aside className="rounded-lg border border-slate-200 bg-white shadow-sm [&>div]:h-full">
-              <AvatarCard
-                onChangeAvatar={(name) =>
-                  onToast(`${name}(으)로 변경되었습니다.`)
-                }
-              />
-            </aside>
-
-            <section className="relative z-20 rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-                <ClipboardList className="text-blue-600" size={20} />
-                <h3 className="text-base font-black text-slate-950">
-                  세션 설정
-                </h3>
-              </div>
-              <SessionOptions onSelect={(_, val) => onToast(`${val} 선택됨`)} />
-            </section>
-
-            <aside className="grid h-full gap-1.5">
-              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm">
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-blue-50 text-blue-700">
-                  <ShieldCheck size={20} />
-                </span>
-                <div className="flex-1">
-                  <b className="block text-sm text-slate-950">
-                    프라이버시 설정
-                  </b>
-                  <span className="block text-xs text-slate-500">
-                    {privacy
-                      ? '원본 영상은 저장하지 않아요'
-                      : '원본 영상 저장 옵션 확인 필요'}
-                  </span>
+            {/* 왼쪽 컬럼 */}
+            <div className="grid gap-4">
+              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center gap-2">
+                  <UploadCloud className="text-blue-600" size={20} />
+                  <h3 className="text-base font-black text-slate-950">
+                    자료 업로드
+                  </h3>
                 </div>
-                <Toggle
-                  on={privacy}
-                  onChange={() => {
-                    setPrivacy((v) => !v)
-                    onToast('프라이버시 설정이 변경되었습니다.')
-                  }}
-                  ariaLabel="프라이버시 토글"
+                <UploadGrid
+                  onUpload={(label) => onToast(`${label} 업로드 완료`)}
+                  onDelete={(label) => onToast(`${label} 삭제 완료`)}
+                />
+              </section>
+
+              <section className="relative z-20 rounded-lg border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                  <ClipboardList className="text-blue-600" size={20} />
+                  <h3 className="text-base font-black text-slate-950">
+                    세션 설정
+                  </h3>
+                </div>
+                <SessionOptions
+                  onSelect={(_, val) => onToast(`${val} 선택됨`)}
+                />
+              </section>
+            </div>
+
+            {/* 오른쪽 컬럼 */}
+            <aside className="grid min-h-0 gap-4 grid-rows-[minmax(0,1fr)_auto]">
+              <div className="min-h-0 rounded-lg border border-slate-200 bg-white shadow-sm [&>div]:h-full">
+                <AvatarCard
+                  onChangeAvatar={(name) =>
+                    onToast(`${name}(으)로 변경되었습니다.`)
+                  }
                 />
               </div>
 
               <button
                 type="button"
                 onClick={() => onNavigate('live')}
-                className="flex min-h-16 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
+                className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
               >
                 <span>
                   <span className="block text-md font-black">연습 시작</span>
