@@ -11,11 +11,13 @@ import {
   Settings,
 } from 'lucide-react'
 
+import { AuthGate } from '@/components/auth/AuthGate'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { HomeScreen } from '@/components/home/HomeScreen'
 import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
+import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
 
@@ -60,6 +62,7 @@ interface PrototypeScreenPageProps {
 export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   const router = useRouter()
   const [toast, setToast] = useState({ show: false, message: '' })
+  const user = useAuthStore((state) => state.user)
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -84,97 +87,110 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   }
 
   const currentNav = DESKTOP_NAV_ITEMS.find((item) => item.screen === current)
+  const userDisplayName = user?.name || user?.email || '사용자'
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: `
+    <AuthGate>
+      <div
+        className="min-h-screen"
+        style={{
+          background: `
           radial-gradient(circle at 15% 0%, rgba(77,154,255,.18), transparent 32%),
           radial-gradient(circle at 88% 8%, rgba(139,92,246,.16), transparent 38%),
           linear-gradient(180deg,#fbfcff 0%,#f5f7ff 100%)
         `,
-      }}
-    >
-      <div className="mx-auto max-w-[1480px] px-0 pb-0 pt-0 lg:px-6 lg:pb-6 lg:pt-5">
-        <header className="hidden items-center justify-between border-b border-slate-200 pb-4 lg:flex">
-          <div>
-            <p className="text-sm font-bold text-blue-600">AI 코치</p>
-            <h1 className="text-2xl font-black tracking-tight text-slate-950">
-              {currentNav?.label ?? '홈'}
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-              aria-label="알림"
-            >
-              <Bell size={18} />
-            </button>
-            <button
-              type="button"
-              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-              aria-label="설정"
-            >
-              <Settings size={18} />
-            </button>
-          </div>
-        </header>
-
-        <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-6 lg:pt-5">
-          <aside className="hidden flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-sm lg:flex">
-            <div className="mb-4 rounded-lg bg-slate-50 p-3">
-              <strong className="block text-sm text-slate-950">
-                연습 워크스페이스
-              </strong>
-              <span className="mt-1 block text-xs text-slate-500">
-                면접과 발표 준비를 한 곳에서 관리합니다.
-              </span>
+        }}
+      >
+        <div className="mx-auto max-w-[1480px] px-0 pb-0 pt-0 lg:px-6 lg:pb-6 lg:pt-5">
+          <header className="hidden items-center justify-between border-b border-slate-200 pb-4 lg:flex">
+            <div>
+              <p className="text-sm font-bold text-blue-600">AI 코치</p>
+              <h1 className="text-2xl font-black tracking-tight text-slate-950">
+                {currentNav?.label ?? '홈'}
+              </h1>
             </div>
-            <nav className="flex flex-col gap-1">
-              {DESKTOP_NAV_ITEMS.map(
-                ({ icon: Icon, label, description, screen }) => (
-                  <button
-                    key={screen}
-                    type="button"
-                    onClick={() => navigate(screen)}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                      current === screen
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
-                    )}
-                  >
-                    <Icon size={18} />
-                    <span>
-                      <span className="block text-sm font-black">{label}</span>
-                      <span className="block text-xs text-slate-400">
-                        {description}
+            <div className="flex items-center gap-2">
+              <div className="mr-2 hidden text-right xl:block">
+                <strong className="block text-sm font-black text-slate-900">
+                  {userDisplayName}
+                </strong>
+                <span className="block text-xs font-bold text-slate-400">
+                  로그인됨
+                </span>
+              </div>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
+                aria-label="알림"
+              >
+                <Bell size={18} />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
+                aria-label="설정"
+              >
+                <Settings size={18} />
+              </button>
+            </div>
+          </header>
+
+          <div className="lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-6 lg:pt-5">
+            <aside className="hidden flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-sm lg:flex">
+              <div className="mb-4 rounded-lg bg-slate-50 p-3">
+                <strong className="block text-sm text-slate-950">
+                  연습 워크스페이스
+                </strong>
+                <span className="mt-1 block text-xs text-slate-500">
+                  면접과 발표 준비를 한 곳에서 관리합니다.
+                </span>
+              </div>
+              <nav className="flex flex-col gap-1">
+                {DESKTOP_NAV_ITEMS.map(
+                  ({ icon: Icon, label, description, screen }) => (
+                    <button
+                      key={screen}
+                      type="button"
+                      onClick={() => navigate(screen)}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                        current === screen
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                      )}
+                    >
+                      <Icon size={18} />
+                      <span>
+                        <span className="block text-sm font-black">
+                          {label}
+                        </span>
+                        <span className="block text-xs text-slate-400">
+                          {description}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                )
-              )}
-            </nav>
-          </aside>
+                    </button>
+                  )
+                )}
+              </nav>
+            </aside>
 
-          <main className="flex justify-center lg:block">
-            <section
-              className={cn(
-                'relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:max-w-none lg:overflow-visible lg:bg-transparent',
-                current === 'home'
-                  ? 'lg:min-h-0'
-                  : 'lg:min-h-[calc(100vh-132px)]'
-              )}
-            >
-              {screenComponents[current]}
-            </section>
-          </main>
+            <main className="flex justify-center lg:block">
+              <section
+                className={cn(
+                  'relative min-h-[812px] w-full max-w-[430px] overflow-hidden bg-[#f8faff] lg:max-w-none lg:overflow-visible lg:bg-transparent',
+                  current === 'home'
+                    ? 'lg:min-h-0'
+                    : 'lg:min-h-[calc(100vh-132px)]'
+                )}
+              >
+                {screenComponents[current]}
+              </section>
+            </main>
+          </div>
         </div>
-      </div>
 
-      <Toast message={toast.message} show={toast.show} onHide={hideToast} />
-    </div>
+        <Toast message={toast.message} show={toast.show} onHide={hideToast} />
+      </div>
+    </AuthGate>
   )
 }

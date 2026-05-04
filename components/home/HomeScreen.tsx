@@ -14,6 +14,7 @@ import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
 import { Toggle } from '@/components/ui/Toggle'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { useAuthStore } from '@/lib/stores/auth'
 import type { Mode, Screen } from '@/types'
 
 interface HomeScreenProps {
@@ -24,6 +25,9 @@ interface HomeScreenProps {
 export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
   const [mode, setMode] = useState<Mode>('면접')
   const [privacy, setPrivacy] = useState(true)
+  const user = useAuthStore((state) => state.user)
+  const profileName = user?.name || user?.email || '사용자'
+  const profileInitial = profileName.slice(0, 1).toUpperCase()
 
   const handleModeChange = (m: Mode) => {
     setMode(m)
@@ -54,7 +58,9 @@ export function HomeScreen({ onNavigate, onToast }: HomeScreenProps) {
             </div>
             {/* 프로필 아이콘 */}
             <div className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 shadow-lg">
-              <span className="text-xl">🧑</span>
+              <span className="text-base font-black text-blue-700">
+                {profileInitial}
+              </span>
               <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
             </div>
           </div>

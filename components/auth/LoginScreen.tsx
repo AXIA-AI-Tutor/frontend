@@ -11,71 +11,50 @@ import {
 } from 'lucide-react'
 
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
-import {
-  fetchCurrentUser,
-  getGoogleOAuthAuthorizationUrl,
-} from '@/lib/api/auth'
+import { getGoogleOAuthAuthorizationUrl } from '@/lib/api/auth'
+import { selectIsAuthChecking, useAuthStore } from '@/lib/stores/auth'
 
 const CHECK_ITEMS = ['세션 기록 이어보기', '맞춤 피드백 저장', '연습 자료 관리']
 
 export function LoginScreen() {
   const router = useRouter()
-  const [isCheckingSession, setIsCheckingSession] = useState(true)
   const [isStartingLogin, setIsStartingLogin] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
+  const [loginErrorMessage, setLoginErrorMessage] = useState('')
+  const status = useAuthStore((state) => state.status)
+  const authErrorMessage = useAuthStore((state) => state.errorMessage)
+  const markLoginRedirectStarted = useAuthStore(
+    (state) => state.markLoginRedirectStarted
+  )
+  const clearSession = useAuthStore((state) => state.clearSession)
+  const clearError = useAuthStore((state) => state.clearError)
+  const isCheckingSession = selectIsAuthChecking(status) && !isStartingLogin
+  const errorMessage =
+    loginErrorMessage || (status === 'error' ? authErrorMessage : '')
 
   useEffect(() => {
-    let isMounted = true
-
-    async function checkSession() {
-      try {
-        const user = await fetchCurrentUser()
-
-        if (!isMounted) {
-          return
-        }
-
-        if (user) {
-          router.replace('/')
-          return
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : '로그인 상태를 확인하지 못했습니다.'
-          )
-        }
-      } finally {
-        if (isMounted) {
-          setIsCheckingSession(false)
-        }
-      }
+    if (status === 'authenticated') {
+      router.replace('/')
     }
-
-    checkSession()
-
-    return () => {
-      isMounted = false
-    }
-  }, [router])
+  }, [router, status])
 
   const handleGoogleLogin = useCallback(() => {
-    setErrorMessage('')
+    clearError()
+    setLoginErrorMessage('')
     setIsStartingLogin(true)
+    markLoginRedirectStarted()
 
     try {
       window.location.assign(getGoogleOAuthAuthorizationUrl())
     } catch (error) {
-      setErrorMessage(
+      setLoginErrorMessage(
         error instanceof Error
           ? error.message
           : 'Google 로그인을 시작하지 못했습니다.'
       )
+      clearSession()
       setIsStartingLogin(false)
     }
-  }, [])
+  }, [clearError, clearSession, markLoginRedirectStarted])
 
   return (
     <main className="min-h-screen bg-[#f7f9fc] text-slate-950">
