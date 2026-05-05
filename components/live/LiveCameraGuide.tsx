@@ -8,6 +8,7 @@ interface LiveCameraGuideProps {
   className?: string
   controls?: ReactNode
   compact?: boolean
+  fill?: boolean
 }
 
 type CameraStatus = 'idle' | 'ready' | 'blocked' | 'unsupported'
@@ -16,6 +17,7 @@ export function LiveCameraGuide({
   className,
   controls,
   compact = false,
+  fill = false,
 }: LiveCameraGuideProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [status, setStatus] = useState<CameraStatus>('idle')
@@ -83,7 +85,7 @@ export function LiveCameraGuide({
     <section
       className={[
         'overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm',
-        compact ? 'h-[220px]' : '',
+        fill ? 'flex h-full min-h-0 flex-col' : compact ? 'h-[220px]' : '',
         className,
       ]
         .filter(Boolean)
@@ -120,7 +122,7 @@ export function LiveCameraGuide({
       <div
         className={[
           'relative overflow-hidden bg-slate-950',
-          compact ? 'h-[166px]' : 'aspect-video',
+          fill ? 'min-h-0 flex-1' : compact ? 'h-[166px]' : 'aspect-video',
         ].join(' ')}
       >
         <video

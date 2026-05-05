@@ -121,14 +121,26 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
     onToast('다음 질문을 준비합니다.')
   }
 
-  const coachAvatar = (
+  const coachAvatarProps = {
+    question,
+    hint,
+    onHintApply: () => onToast('힌트가 현재 답변 목표에 적용되었습니다.'),
+  }
+
+  const mobileCoachAvatar = (
     <CoachAvatarLive
-      question={question}
-      hint={hint}
-      onHintApply={() => onToast('힌트가 현재 답변 목표에 적용되었습니다.')}
+      {...coachAvatarProps}
       featured={isAnswerLayout}
       compact={!isAnswerLayout}
     />
+  )
+
+  const desktopFeaturedCoachAvatar = (
+    <CoachAvatarLive {...coachAvatarProps} featured fill />
+  )
+
+  const desktopSideCoachAvatar = (
+    <CoachAvatarLive {...coachAvatarProps} expanded fill />
   )
 
   const mobileCamera = <LiveCameraGuide compact={isAnswerLayout} />
@@ -147,7 +159,7 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   )
 
   const desktopCamera = (
-    <LiveCameraGuide controls={desktopControls} compact={isAnswerLayout} />
+    <LiveCameraGuide controls={desktopControls} fill compact={isAnswerLayout} />
   )
 
   return (
@@ -160,13 +172,13 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
           <div className="mb-2.5 space-y-2.5">
             {isAnswerLayout ? (
               <>
-                {coachAvatar}
+                {mobileCoachAvatar}
                 {mobileCamera}
               </>
             ) : (
               <>
                 {mobileCamera}
-                {coachAvatar}
+                {mobileCoachAvatar}
               </>
             )}
           </div>
@@ -199,14 +211,18 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
         <div className="space-y-4">
           {/* <LiveHeader onNavigate={onNavigate} /> */}
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-4">
-              {isAnswerLayout ? coachAvatar : desktopCamera}
+              <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
+                {isAnswerLayout ? desktopFeaturedCoachAvatar : desktopCamera}
+              </div>
               <TranscriptCard />
             </div>
 
-            <aside className="space-y-4 min-w-0">
-              {isAnswerLayout ? desktopCamera : coachAvatar}
+            <aside className="flex min-w-0 flex-col gap-4">
+              <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
+                {isAnswerLayout ? desktopCamera : desktopSideCoachAvatar}
+              </div>
               <LiveMetrics
                 duration={timeStr}
                 totalDuration={totalDurationStr}
