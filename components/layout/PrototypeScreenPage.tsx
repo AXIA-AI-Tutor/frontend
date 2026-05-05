@@ -29,6 +29,13 @@ const SCREEN_PATHS: Record<Screen, string> = {
   report: '/report',
 }
 
+const SCREEN_LABELS: Record<Screen, string> = {
+  home: '홈',
+  live: '실시간 연습',
+  feedback: '턴 피드백',
+  report: '세션 리포트',
+}
+
 const DESKTOP_NAV_ITEMS = [
   {
     icon: Home,
@@ -52,9 +59,17 @@ const DESKTOP_NAV_ITEMS = [
 
 interface PrototypeScreenPageProps {
   current: Screen
+  turnNumber?: number
 }
 
-export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
+interface NavigationOptions {
+  turnNumber?: number
+}
+
+export function PrototypeScreenPage({
+  current,
+  turnNumber = 1,
+}: PrototypeScreenPageProps) {
   const router = useRouter()
   const [toast, setToast] = useState({ show: false, message: '' })
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -71,8 +86,18 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
   }, [])
 
   const navigate = useCallback(
-    (screen: Screen) => {
-      router.push(SCREEN_PATHS[screen])
+    (screen: Screen, options?: NavigationOptions) => {
+      const path = SCREEN_PATHS[screen]
+
+      if (options?.turnNumber) {
+        const params = new URLSearchParams({
+          turn: String(options.turnNumber),
+        })
+        router.push(`${path}?${params.toString()}`)
+        return
+      }
+
+      router.push(path)
     },
     [router]
   )
@@ -106,12 +131,24 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
         onToast={showToast}
       />
     ),
-    live: <LiveScreen onNavigate={navigate} onToast={showToast} />,
-    feedback: <FeedbackScreen onNavigate={navigate} onToast={showToast} />,
+    live: (
+      <LiveScreen
+        key={`live-${turnNumber}`}
+        initialTurnNumber={turnNumber}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
+    feedback: (
+      <FeedbackScreen
+        turnNumber={turnNumber}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
     report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
   }
 
-  const currentNav = DESKTOP_NAV_ITEMS.find((item) => item.screen === current)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
   const userDisplayName = isAuthenticated
     ? user?.name || user?.email || '사용자'
@@ -135,7 +172,7 @@ export function PrototypeScreenPage({ current }: PrototypeScreenPageProps) {
             <div>
               <p className="text-sm font-bold text-blue-600">AI 코치</p>
               <h1 className="text-2xl font-black tracking-tight text-slate-950">
-                {currentNav?.label ?? '홈'}
+                {SCREEN_LABELS[current]}
               </h1>
             </div>
             <div className="flex items-center gap-2">

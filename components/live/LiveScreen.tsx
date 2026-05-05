@@ -12,27 +12,18 @@ import {
   type TurnFeedbackStatus,
 } from '@/components/live/TurnFeedbackCard'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
 
-interface LiveScreenProps {
-  onNavigate: (screen: Screen) => void
-  onToast: (msg: string) => void
+interface LiveNavigationOptions {
+  turnNumber?: number
 }
 
-const LIVE_TURNS = [
-  {
-    question: '자기소개와 지원 동기를 1분 안에 말해보세요.',
-    hint: '성과는 구체적인 수치(%, 금액, 기간 등)로 제시하면 신뢰도가 높아져요.',
-  },
-  {
-    question: '최근 프로젝트에서 맡았던 역할과 성과를 설명해 주세요.',
-    hint: '상황, 맡은 일, 실행한 행동, 결과 순서로 답변하면 흐름이 선명해져요.',
-  },
-  {
-    question: '협업 중 의견 충돌을 해결했던 경험을 말해보세요.',
-    hint: '상대의 관점을 어떻게 확인했고 합의점을 어떻게 만들었는지 포함해보세요.',
-  },
-] as const
+interface LiveScreenProps {
+  onNavigate: (screen: Screen, options?: LiveNavigationOptions) => void
+  onToast: (msg: string) => void
+  initialTurnNumber: number
+}
 
 const TOTAL_DURATION_SECONDS = 180
 
@@ -44,17 +35,21 @@ function formatDuration(seconds: number) {
   return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
 }
 
-export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
+export function LiveScreen({
+  onNavigate,
+  onToast,
+  initialTurnNumber,
+}: LiveScreenProps) {
   const [seconds, setSeconds] = useState(0)
   const [eye, setEye] = useState(86)
   const [pose, setPose] = useState(8)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
-  const [turnNumber, setTurnNumber] = useState(1)
+  const [turnNumber, setTurnNumber] = useState(initialTurnNumber)
   const [isAnswerLayout, setIsAnswerLayout] = useState(false)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
-    useState<TurnFeedbackStatus>('in-progress')
+    useState<TurnFeedbackStatus>('ready')
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const secondsRef = useRef(0)
@@ -111,7 +106,7 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
 
   const timeStr = formatDuration(seconds)
   const totalDurationStr = formatDuration(TOTAL_DURATION_SECONDS)
-  const turn = LIVE_TURNS[(turnNumber - 1) % LIVE_TURNS.length]
+  const turn = getLiveTurn(turnNumber)
   const { question, hint } = turn
 
   const handleStart = () => {
@@ -160,7 +155,7 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   }
 
   const handleOpenFeedback = () => {
-    onNavigate('feedback')
+    onNavigate('feedback', { turnNumber })
   }
 
   const coachAvatarProps = {
