@@ -5,6 +5,10 @@ interface CoachAvatarLiveProps {
   hint?: string
   onHintApply?: () => void
   compact?: boolean
+  featured?: boolean
+  expanded?: boolean
+  fill?: boolean
+  className?: string
 }
 
 export function CoachAvatarLive({
@@ -12,21 +16,42 @@ export function CoachAvatarLive({
   hint,
   onHintApply,
   compact = false,
+  featured = false,
+  expanded = false,
+  fill = false,
+  className,
 }: CoachAvatarLiveProps) {
+  const containerClass = fill
+    ? 'h-full rounded-lg'
+    : featured
+      ? 'min-h-[360px] rounded-lg lg:min-h-[560px] xl:min-h-[620px]'
+      : expanded
+        ? 'min-h-[320px] flex-1 rounded-lg'
+        : compact
+          ? 'h-[220px] rounded-lg'
+          : 'mb-2.5 h-[230px] rounded-[18px]'
+  const hasTopBubble = featured || expanded
+
   return (
     <div
       className={[
         'relative grid place-items-center overflow-hidden border border-slate-200 bg-gradient-to-b from-[#e9edff] to-[#dce7ff] shadow-sm',
-        compact ? 'h-[220px] rounded-lg' : 'mb-2.5 h-[230px] rounded-[18px]',
+        containerClass,
+        className,
       ].join(' ')}
     >
       {/* 아바타 (1.5배 크기) */}
       <div
-        className={
-          compact
-            ? 'absolute bottom-4 left-10 scale-110'
-            : 'absolute bottom-3 left-9 scale-125'
-        }
+        className={[
+          'absolute',
+          featured
+            ? 'bottom-8 left-1/2 -translate-x-1/2 scale-[1.7] lg:bottom-10 lg:scale-[2]'
+            : expanded
+              ? 'bottom-5 left-1/2 -translate-x-1/2 scale-[1.25] lg:bottom-7 lg:scale-[1.45]'
+              : compact
+                ? 'bottom-4 left-10 scale-110'
+                : 'bottom-3 left-9 scale-125',
+        ].join(' ')}
       >
         <CoachAvatar />
       </div>
@@ -34,7 +59,13 @@ export function CoachAvatarLive({
       <div
         className={[
           'absolute rounded-[18px] bg-white p-3 text-[13px] font-black leading-snug shadow-md',
-          compact ? 'right-4 top-5 w-[190px]' : 'right-3.5 top-5 w-[180px]',
+          featured
+            ? 'left-1/2 top-6 w-[calc(100%-40px)] max-w-[460px] -translate-x-1/2 lg:top-8 lg:p-5 lg:text-base'
+            : expanded
+              ? 'left-1/2 top-6 w-[calc(100%-40px)] -translate-x-1/2 lg:top-7'
+              : compact
+                ? 'right-4 top-5 w-[190px]'
+                : 'right-3.5 top-5 w-[180px]',
         ].join(' ')}
       >
         <p className="break-keep">{question}</p>
@@ -61,12 +92,24 @@ export function CoachAvatarLive({
         ) : null}
         {/* 말풍선 꼬리 */}
         <span
-          className="absolute -left-2.5 top-9"
-          style={{
-            borderTop: '8px solid transparent',
-            borderBottom: '8px solid transparent',
-            borderRight: '12px solid white',
-          }}
+          className={
+            hasTopBubble
+              ? 'absolute -bottom-2 left-10'
+              : 'absolute -left-2.5 top-9'
+          }
+          style={
+            hasTopBubble
+              ? {
+                  borderLeft: '8px solid transparent',
+                  borderRight: '8px solid transparent',
+                  borderTop: '12px solid white',
+                }
+              : {
+                  borderTop: '8px solid transparent',
+                  borderBottom: '8px solid transparent',
+                  borderRight: '12px solid white',
+                }
+          }
         />
       </div>
     </div>
