@@ -8,7 +8,6 @@ import {
   Home,
   Loader2,
   LogOut,
-  MessageSquareText,
   Mic,
   Settings,
 } from 'lucide-react'
@@ -42,12 +41,6 @@ const DESKTOP_NAV_ITEMS = [
     label: '실시간 연습',
     description: '답변 진행',
     screen: 'live' as Screen,
-  },
-  {
-    icon: MessageSquareText,
-    label: '턴 피드백',
-    description: '답변 분석',
-    screen: 'feedback' as Screen,
   },
   {
     icon: BarChart3,
