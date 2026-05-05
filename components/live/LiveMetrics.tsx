@@ -1,64 +1,32 @@
 import { cn } from '@/lib/utils'
 import { LiveAudioWaveform } from '@/components/live/LiveAudioWaveform'
 
-interface NumberMetric {
-  label: string
-  value: string
-  unit?: string
-}
-
 interface LiveMetricsProps {
   duration: string
   totalDuration: string
-  speechRate: number
-  silence: number
-  fillers: number
   eyeContact: number
   posture: number
   isRecording: boolean
+  currentTurn: number
   waveformResetSignal: number
 }
 
 export function LiveMetrics({
   duration,
   totalDuration,
-  speechRate,
-  silence,
-  fillers,
   eyeContact,
   posture,
   isRecording,
+  currentTurn,
   waveformResetSignal,
 }: LiveMetricsProps) {
-  const numberMetrics: NumberMetric[] = [
-    {
-      label: 'Duration',
-      value: `${duration} / ${totalDuration}`,
-    },
-    {
-      label: 'Speech Rate',
-      value: String(speechRate),
-      unit: 'wpm',
-    },
-    {
-      label: 'Silence',
-      value: silence.toFixed(1),
-      unit: 'sec',
-    },
-    {
-      label: 'Fillers',
-      value: String(fillers),
-      unit: '회',
-    },
-  ]
-
   return (
     <section className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm lg:mb-0 lg:rounded-lg lg:p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black text-slate-950">실시간 분석</h3>
           <p className="mt-0.5 text-xs font-bold text-slate-400">
-            발화와 자세 신호를 함께 추적합니다.
+            시선과 자세 신호를 함께 추적합니다.
           </p>
         </div>
         <div
@@ -79,34 +47,22 @@ export function LiveMetrics({
         </div>
       </div>
 
+      <div className="mb-2.5 flex items-center justify-between gap-3">
+        <span className="text-xs font-black tabular-nums text-slate-600">
+          {duration} / {totalDuration}
+        </span>
+        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-600">
+          턴 {currentTurn}
+        </span>
+      </div>
+
       <LiveAudioWaveform
         isRecording={isRecording}
         resetSignal={waveformResetSignal}
         className="mb-4"
       />
 
-      <div className="grid grid-cols-2 gap-2.5">
-        {numberMetrics.map(({ label, value, unit }) => (
-          <div
-            key={label}
-            className="min-h-[70px] rounded-lg border border-slate-200 bg-white p-3"
-          >
-            <span className="text-[11px] font-black uppercase text-slate-400">
-              {label}
-            </span>
-            <strong className="mt-2 flex items-end gap-1 text-xl font-black tracking-tight text-slate-950">
-              {value}
-              {unit ? (
-                <small className="pb-0.5 text-[11px] font-bold text-slate-400">
-                  {unit}
-                </small>
-              ) : null}
-            </strong>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <MetricBar label="Eye Contact" value={eyeContact} tone="blue" />
         <MetricBar label="Posture" value={posture} tone="emerald" />
       </div>

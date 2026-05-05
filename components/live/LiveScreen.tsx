@@ -30,43 +30,63 @@ const LIVE_TURNS = [
   },
 ] as const
 
+const TOTAL_DURATION_SECONDS = 180
+
 function pad(n: number) {
   return String(n).padStart(2, '0')
 }
 
+function formatDuration(seconds: number) {
+  return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
+}
+
 export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
-  const [seconds, setSeconds] = useState(42)
-  const [wpm, setWpm] = useState(148)
+  const [seconds, setSeconds] = useState(0)
   const [eye, setEye] = useState(86)
   const [pose, setPose] = useState(8)
-  const [silence, setSilence] = useState(2.4)
-  const [fillers, setFillers] = useState(1)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
-  const [turnIndex, setTurnIndex] = useState(0)
+  const [turnNumber, setTurnNumber] = useState(1)
   const [isAnswerLayout, setIsAnswerLayout] = useState(false)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const secondsRef = useRef(0)
+  const didReachLimitRef = useRef(false)
 
   useEffect(() => {
     tickRef.current = setInterval(() => {
       if (!isRecording) return
-      setSeconds((s) => (s + 1) % 61)
-      setWpm(138 + Math.floor(Math.random() * 18))
+
+      const nextSeconds = Math.min(
+        secondsRef.current + 1,
+        TOTAL_DURATION_SECONDS
+      )
+
+      secondsRef.current = nextSeconds
+      setSeconds(nextSeconds)
       setEye(82 + Math.floor(Math.random() * 8))
       setPose(4 + Math.floor(Math.random() * 8))
-      setSilence(1.5 + Math.random() * 3.8)
-      setFillers(1 + Math.floor(Math.random() * 4))
-    }, 2200)
+
+      if (nextSeconds >= TOTAL_DURATION_SECONDS && !didReachLimitRef.current) {
+        didReachLimitRef.current = true
+        setIsRecording(false)
+        onToast('제한 시간이 종료되었습니다.')
+      }
+    }, 1000)
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
     }
-  }, [isRecording])
+  }, [isRecording, onToast])
 
-  const timeStr = `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
-  const { question, hint } = LIVE_TURNS[turnIndex]
+  const timeStr = formatDuration(seconds)
+  const totalDurationStr = formatDuration(TOTAL_DURATION_SECONDS)
+  const turn = LIVE_TURNS[(turnNumber - 1) % LIVE_TURNS.length]
+  const { question, hint } = turn
 
   const handleStart = () => {
+    secondsRef.current = 0
+    didReachLimitRef.current = false
+    setSeconds(0)
     setIsRecording(true)
     setIsAnswerLayout(true)
     setShowStartGuide(false)
@@ -79,6 +99,8 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   }
 
   const handleRestart = () => {
+    secondsRef.current = 0
+    didReachLimitRef.current = false
     setSeconds(0)
     setIsRecording(true)
     setIsAnswerLayout(true)
@@ -88,7 +110,9 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
   }
 
   const handleNextTurn = () => {
-    setTurnIndex((index) => (index + 1) % LIVE_TURNS.length)
+    secondsRef.current = 0
+    didReachLimitRef.current = false
+    setTurnNumber((number) => number + 1)
     setSeconds(0)
     setIsRecording(false)
     setIsAnswerLayout(false)
@@ -148,13 +172,11 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
           </div>
           <LiveMetrics
             duration={timeStr}
-            totalDuration="01:00"
-            speechRate={wpm}
-            silence={silence}
-            fillers={fillers}
+            totalDuration={totalDurationStr}
             eyeContact={eye}
             posture={100 - pose * 3}
             isRecording={isRecording}
+            currentTurn={turnNumber}
             waveformResetSignal={waveformResetSignal}
           />
           <TranscriptCard />
@@ -187,13 +209,11 @@ export function LiveScreen({ onNavigate, onToast }: LiveScreenProps) {
               {isAnswerLayout ? desktopCamera : coachAvatar}
               <LiveMetrics
                 duration={timeStr}
-                totalDuration="01:00"
-                speechRate={wpm}
-                silence={silence}
-                fillers={fillers}
+                totalDuration={totalDurationStr}
                 eyeContact={eye}
                 posture={100 - pose * 3}
                 isRecording={isRecording}
+                currentTurn={turnNumber}
                 waveformResetSignal={waveformResetSignal}
               />
             </aside>
