@@ -163,18 +163,6 @@ export function ReportScreen({
         <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
           <MemoryChips chips={MEMORY_CHIPS} />
         </div>
-
-        {/* 다음 세션 CTA */}
-        <button
-          onClick={() => onNavigate('home')}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 py-[15px] text-lg font-black text-white"
-          style={{
-            background: 'linear-gradient(135deg,#1689ff,#7c3aed)',
-            boxShadow: '0 13px 26px rgba(55,86,255,.25)',
-          }}
-        >
-          다음 세션 추천 ›
-        </button>
       </div>
 
       <BottomNav current="report" onNavigate={onNavigate} />
