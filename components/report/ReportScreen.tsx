@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Eye } from 'lucide-react'
 
 import { ScoreRing } from '@/components/report/ScoreRing'
 import { TurnChart } from '@/components/report/TurnChart'
@@ -13,6 +13,15 @@ import type { Screen } from '@/types'
 interface ReportScreenProps {
   onNavigate: (screen: Screen) => void
   onToast: (msg: string) => void
+  summary?: ReportSessionSummary
+}
+
+interface ReportSessionSummary {
+  latestSessionDate: string
+  score: number
+  previousDeltaScore: number
+  averageScore: number
+  peerPercentile: number
 }
 
 const STRENGTHS = ['논리적 구조', '전달력 유지', '핵심 키워드 사용']
@@ -31,8 +40,36 @@ const MEMORY_CHIPS = [
   '반복 약점: 구체성 부족',
   '학습 목표: 논리적 구조 강화',
 ]
+const DEFAULT_SUMMARY: ReportSessionSummary = {
+  latestSessionDate: '2026. 05. 05',
+  score: 82,
+  previousDeltaScore: 12,
+  averageScore: 78,
+  peerPercentile: 23,
+}
 
-export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
+function formatDeltaScore(deltaScore: number) {
+  if (deltaScore > 0) {
+    return `지난 세션 대비 +${deltaScore}점 상승!`
+  }
+
+  if (deltaScore < 0) {
+    return `지난 세션 대비 ${deltaScore}점 하락`
+  }
+
+  return '지난 세션과 같은 점수예요.'
+}
+
+export function ReportScreen({
+  onNavigate,
+  onToast,
+  summary = DEFAULT_SUMMARY,
+}: ReportScreenProps) {
+  const scoreStats = [
+    { val: `${summary.averageScore}점`, label: '평균 점수' },
+    { val: `상위 ${summary.peerPercentile}%`, label: '비슷한 사용자 대비' },
+  ]
+
   return (
     <>
       {/* 헤더 */}
@@ -53,39 +90,44 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
 
       {/* 콘텐츠 */}
       <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
-        {/* 세션 선택 */}
-        <div className="mb-2 flex items-center justify-between font-black text-sm">
-          2024.05.23 면접 세션
-          <button className="rounded-xl border border-blue-200 bg-white px-2.5 py-1.5 text-[13px] font-black text-blue-600">
-            ⇧ 공유
-          </button>
-        </div>
-
         {/* 종합 점수 */}
-        <div className="mb-2.5 grid grid-cols-[112px_1fr] items-center gap-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <ScoreRing score={82} />
-          <div>
-            <h3 className="text-sm font-black text-blue-700">
-              지난 세션 대비 +12점 상승!
-            </h3>
-            <p className="mt-1 text-[11.5px] text-slate-500">
-              논리적 구조와 답변 길이가 크게 개선되었어요.
-            </p>
-            <div className="mt-2 grid grid-cols-2 gap-[7px]">
-              {[
-                { val: '78점', label: '평균 점수' },
-                { val: '상위 23%', label: '비슷한 사용자 대비' },
-              ].map(({ val, label }) => (
-                <div
-                  key={label}
-                  className="rounded-xl border border-slate-200 p-2 text-center"
-                >
-                  <b className="block text-[13px]">{val}</b>
-                  <span className="block text-[10px] text-slate-400">
-                    {label}
-                  </span>
-                </div>
-              ))}
+        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between gap-3 text-lg font-black text-slate-950">
+            <span className="min-w-0">
+              최근 면접 세션 : {summary.latestSessionDate}
+            </span>
+            <button
+              type="button"
+              onClick={() => onToast('최근 면접 세션 상세를 확인합니다.')}
+              className="inline-flex h-5.5 lg:h-8 shrink-0 items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 text-[11px] font-black text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 lg:text-xs"
+            >
+              <Eye size={14} strokeWidth={2.4} />
+              바로 확인
+            </button>
+          </div>
+
+          <div className="grid grid-cols-[112px_1fr] items-center gap-2.5">
+            <ScoreRing score={summary.score} />
+            <div>
+              <h3 className="text-sm font-black text-blue-700">
+                {formatDeltaScore(summary.previousDeltaScore)}
+              </h3>
+              <p className="mt-1 text-[11.5px] text-slate-500">
+                논리적 구조와 답변 길이가 크게 개선되었어요.
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-[7px]">
+                {scoreStats.map(({ val, label }) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-slate-200 p-2 text-center"
+                  >
+                    <b className="block text-[13px]">{val}</b>
+                    <span className="block text-[10px] text-slate-400">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
