@@ -1,5 +1,7 @@
 'use client'
 
+import { ChevronLeft } from 'lucide-react'
+
 import { ScoreRing } from '@/components/report/ScoreRing'
 import { TurnChart } from '@/components/report/TurnChart'
 import { StrengthWeakness } from '@/components/report/StrengthWeakness'
@@ -34,26 +36,23 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
   return (
     <>
       {/* 헤더 */}
-      <div
-        className="h-[138px] px-[18px] pt-12 text-white"
-        style={{
-          background:
-            'linear-gradient(135deg,#2e96ff 0%,#3d72ff 42%,#7c3aed 100%)',
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <div className="text-[25px] font-black">세션 리포트 ✦</div>
-          <div className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 shadow-lg">
-            <span className="text-xl">🧑</span>
-          </div>
-        </div>
-      </div>
+      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm lg:hidden">
+        <button
+          type="button"
+          onClick={() => onNavigate('home')}
+          className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+          aria-label="홈으로 돌아가기"
+        >
+          <ChevronLeft size={20} strokeWidth={2.5} />
+        </button>
+
+        <h2 className="text-base font-black text-slate-950">세션 리포트</h2>
+
+        <div className="h-9 w-9" aria-hidden />
+      </header>
 
       {/* 콘텐츠 */}
-      <div
-        className="absolute left-3.5 right-3.5 overflow-auto pb-3"
-        style={{ top: 120, bottom: 70 }}
-      >
+      <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
         {/* 세션 선택 */}
         <div className="mb-2 flex items-center justify-between font-black text-sm">
           2024.05.23 면접 세션
