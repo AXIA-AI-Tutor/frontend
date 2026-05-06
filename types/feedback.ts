@@ -1,8 +1,32 @@
-// 백엔드: domain/answer 기반 (프론트엔드에서 '턴 피드백'으로 표시)
+import type { AnswerResponse } from '@/types/answer'
+
+// 백엔드 도메인명: feedback (프론트엔드에서 '턴 피드백'으로 표시)
+
+export type FeedbackSource = 'live' | 'report'
+
+// 백엔드: domain/feedback/dto/FeedbackResponse.java
+export interface FeedbackResponse {
+  feedbackId: number
+  answerId: number
+  summary: string | null
+  evidence: string | null
+  improvementExample: string | null
+  structureScore: number | null
+  specificityScore: number | null
+  relevanceScore: number | null
+  deliveryScore: number | null
+  createdAt: string
+}
+
+// 백엔드: domain/answer/dto/AnswerWithFeedbackResponse.java
+export interface AnswerWithFeedbackResponse {
+  answer: AnswerResponse
+  feedback: FeedbackResponse
+}
 
 export interface FeedbackScore {
   label: string
-  score: number
+  score: number | null
 }
 
 // 백엔드: domain/answer/entity/Answer — question/hint/topic은 AI 생성 예정
@@ -12,12 +36,15 @@ export interface TurnData {
   topic: string
 }
 
-// 백엔드 미구현: AI 생성 피드백 구조 (향후 feedback 도메인 추가 예정)
+// FeedbackScreen 표시 모델: AnswerResponse + FeedbackResponse 조합을 화면에 맞게 정규화
 export interface FeedbackData {
-  answer: string // 백엔드: AnswerResponse.transcript
-  summary: string // 한 줄 요약
-  rationale: string[] // 근거 목록
-  improvedExample: string // 개선 예시
-  scores: FeedbackScore[] // 세부 점수 (5점 만점)
+  feedbackId?: number
+  answerId?: number
+  createdAt?: string
+  answer: string | null // 백엔드: AnswerResponse.transcript
+  summary: string | null
+  evidence: string | null
+  improvedExample: string | null
+  scores: FeedbackScore[] // 백엔드 점수 범위: 0~100
   durationLabel?: string // 답변 소요 시간 표시 (예: '00:42')
 }
