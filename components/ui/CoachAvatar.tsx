@@ -32,12 +32,7 @@ export function CoachAvatar({ scale = 1 }: { scale?: number }) {
         {/* 눈 */}
         <span
           className="absolute"
-          style={{
-            top: 23 * scale,
-            left: 11 * scale,
-            fontSize: 13 * scale,
-            color: '#1a1a22',
-          }}
+          style={{ top: 23 * scale, left: 11 * scale, fontSize: 13 * scale, color: '#1a1a22' }}
         >
           •&nbsp;&nbsp;&nbsp;•
         </span>

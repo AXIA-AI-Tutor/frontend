@@ -2,114 +2,26 @@ import { CoachAvatar } from '@/components/ui/CoachAvatar'
 
 interface CoachAvatarLiveProps {
   question: string
-  hint?: string
-  onHintApply?: () => void
-  compact?: boolean
-  featured?: boolean
-  expanded?: boolean
-  fill?: boolean
-  className?: string
 }
 
-export function CoachAvatarLive({
-  question,
-  hint,
-  onHintApply,
-  compact = false,
-  featured = false,
-  expanded = false,
-  fill = false,
-  className,
-}: CoachAvatarLiveProps) {
-  const containerClass = fill
-    ? 'h-full rounded-lg'
-    : featured
-      ? 'min-h-[360px] rounded-lg lg:min-h-[560px] xl:min-h-[620px]'
-      : expanded
-        ? 'min-h-[320px] flex-1 rounded-lg'
-        : compact
-          ? 'h-[220px] rounded-lg'
-          : 'mb-2.5 h-[230px] rounded-[18px]'
-  const hasTopBubble = featured || expanded
-
+export function CoachAvatarLive({ question }: CoachAvatarLiveProps) {
   return (
-    <div
-      className={[
-        'relative grid place-items-center overflow-hidden border border-slate-200 bg-gradient-to-b from-[#e9edff] to-[#dce7ff] shadow-sm',
-        containerClass,
-        className,
-      ].join(' ')}
-    >
+    <div className="relative mb-2.5 grid h-[190px] place-items-center overflow-hidden rounded-[18px] border border-slate-200 bg-gradient-to-b from-[#e9edff] to-[#dce7ff]">
       {/* 아바타 (1.5배 크기) */}
-      <div
-        className={[
-          'absolute',
-          featured
-            ? 'bottom-8 left-1/2 -translate-x-1/2 scale-[1.7] lg:bottom-10 lg:scale-[2]'
-            : expanded
-              ? 'bottom-5 left-1/2 -translate-x-1/2 scale-[1.25] lg:bottom-7 lg:scale-[1.45]'
-              : compact
-                ? 'bottom-4 left-10 scale-110'
-                : 'bottom-3 left-9 scale-125',
-        ].join(' ')}
-      >
+      <div className="relative top-7" style={{ transform: 'scale(1.5)' }}>
         <CoachAvatar />
       </div>
       {/* 말풍선 */}
-      <div
-        className={[
-          'absolute rounded-[18px] bg-white p-3 text-[13px] font-black leading-snug shadow-md',
-          featured
-            ? 'left-1/2 top-6 w-[calc(100%-40px)] max-w-[460px] -translate-x-1/2 lg:top-8 lg:p-5 lg:text-base'
-            : expanded
-              ? 'left-1/2 top-6 w-[calc(100%-40px)] -translate-x-1/2 lg:top-7'
-              : compact
-                ? 'right-4 top-5 w-[190px]'
-                : 'right-3.5 top-5 w-[180px]',
-        ].join(' ')}
-      >
-        <p className="break-keep">{question}</p>
-        {hint ? (
-          <div className="mt-2 border-t border-slate-100 pt-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-black uppercase text-blue-600">
-                Tip
-              </span>
-              {onHintApply ? (
-                <button
-                  type="button"
-                  onClick={onHintApply}
-                  className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600 transition-colors hover:bg-blue-100"
-                >
-                  적용
-                </button>
-              ) : null}
-            </div>
-            <p className="mt-0.5 break-keep text-[11px] font-bold leading-snug text-slate-500">
-              {hint}
-            </p>
-          </div>
-        ) : null}
+      <div className="absolute right-3.5 top-9 w-[116px] rounded-[18px] bg-white p-3 text-[13px] font-black leading-snug shadow-md">
+        {question}
         {/* 말풍선 꼬리 */}
         <span
-          className={
-            hasTopBubble
-              ? 'absolute -bottom-2 left-10'
-              : 'absolute -left-2.5 top-9'
-          }
-          style={
-            hasTopBubble
-              ? {
-                  borderLeft: '8px solid transparent',
-                  borderRight: '8px solid transparent',
-                  borderTop: '12px solid white',
-                }
-              : {
-                  borderTop: '8px solid transparent',
-                  borderBottom: '8px solid transparent',
-                  borderRight: '12px solid white',
-                }
-          }
+          className="absolute -left-2.5 top-9"
+          style={{
+            borderTop: '8px solid transparent',
+            borderBottom: '8px solid transparent',
+            borderRight: '12px solid white',
+          }}
         />
       </div>
     </div>

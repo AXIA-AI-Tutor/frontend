@@ -15,7 +15,9 @@ export function Toggle({ on, onChange, ariaLabel }: ToggleProps) {
       aria-label={ariaLabel}
       className={cn(
         'relative h-7 w-12 rounded-full border-0 transition-all duration-200',
-        on ? 'bg-gradient-to-br from-blue-600 to-purple-700' : 'bg-slate-300'
+        on
+          ? 'bg-gradient-to-br from-blue-600 to-purple-700'
+          : 'bg-slate-300'
       )}
     >
       <span

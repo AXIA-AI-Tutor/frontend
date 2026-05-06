@@ -3,21 +3,14 @@ interface StrengthWeaknessProps {
   weaknesses: string[]
 }
 
-export function StrengthWeakness({
-  strengths,
-  weaknesses,
-}: StrengthWeaknessProps) {
+export function StrengthWeakness({ strengths, weaknesses }: StrengthWeaknessProps) {
   return (
     <div className="grid grid-cols-2 gap-2">
       <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm">
         <h4 className="mb-2 text-[13px] font-black">잘한 점 (강점)</h4>
         <ul className="list-disc pl-4">
           {strengths.map((s) => (
-            <li
-              key={s}
-              className="mb-1 text-[10.8px] leading-snug"
-              style={{ color: '#10b981' }}
-            >
+            <li key={s} className="mb-1 text-[10.8px] leading-snug" style={{ color: '#10b981' }}>
               <span className="text-slate-700">{s}</span>
             </li>
           ))}
@@ -27,11 +20,7 @@ export function StrengthWeakness({
         <h4 className="mb-2 text-[13px] font-black">보완할 점 (약점)</h4>
         <ul className="list-disc pl-4">
           {weaknesses.map((w) => (
-            <li
-              key={w}
-              className="mb-1 text-[10.8px] leading-snug"
-              style={{ color: '#ef4444' }}
-            >
+            <li key={w} className="mb-1 text-[10.8px] leading-snug" style={{ color: '#ef4444' }}>
               <span className="text-slate-700">{w}</span>
             </li>
           ))}

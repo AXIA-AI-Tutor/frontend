@@ -6,47 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "typegen": "next typegen",
-    "typecheck": "next typegen && tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "test:watch": "vitest",
-    "format": "prettier --check .",
-    "format:check": "prettier --check .",
-    "format:write": "prettier --write .",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test",
-    "setup:githooks": "git config core.hooksPath .githooks"
+    "lint": "eslint"
   },
   "dependencies": {
-    "axios": "^1.16.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "tailwind-merge": "^3.5.0",
-    "zustand": "^5.0.12"
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
-    "jsdom": "^27.0.1",
-    "prettier": "^3.8.3",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "vitest": "^4.1.5"
-  },
-  "engines": {
-    "node": "22.x"
+    "typescript": "^5"
   }
 }

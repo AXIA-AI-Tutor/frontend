@@ -1,30 +1,6 @@
 'use client'
 
 import { Dropdown } from '@/components/ui/Dropdown'
-import type { SessionDifficulty, SessionTarget } from '@/types/session'
-
-const DIFFICULTY_LABELS: Record<SessionDifficulty, string> = {
-  EASY: '쉬움',
-  NORMAL: '보통',
-  HARD: '어려움',
-}
-
-const LABEL_TO_DIFFICULTY = Object.fromEntries(
-  (Object.entries(DIFFICULTY_LABELS) as [SessionDifficulty, string][]).map(
-    ([k, v]) => [v, k]
-  )
-) as Record<string, SessionDifficulty>
-
-const SESSION_TARGETS: SessionTarget[] = [
-  'BACKEND',
-  'FRONTEND',
-  'FULLSTACK',
-  'AI_ML',
-  'DATA',
-  'DEVOPS',
-  'MOBILE',
-  'QA',
-]
 
 interface SessionOptionsProps {
   onSelect?: (key: string, value: string) => void
@@ -32,27 +8,35 @@ interface SessionOptionsProps {
 
 export function SessionOptions({ onSelect }: SessionOptionsProps) {
   return (
-    <div className="relative z-20 grid grid-cols-3 divide-x divide-slate-100">
+    <div className="grid grid-cols-3 divide-x divide-slate-100">
       <div className="px-3 py-3">
         <small className="mb-[7px] flex items-center gap-1 text-[11px] font-black text-slate-700">
           ▮ 난이도
         </small>
         <Dropdown
-          label={DIFFICULTY_LABELS.NORMAL}
-          options={Object.values(DIFFICULTY_LABELS)}
-          onSelect={(label) =>
-            onSelect?.('difficulty', LABEL_TO_DIFFICULTY[label] ?? label)
-          }
+          label="보통"
+          options={['쉬움', '보통', '어려움']}
+          onSelect={(v) => onSelect?.('difficulty', v)}
         />
       </div>
       <div className="px-3 py-3">
         <small className="mb-[7px] flex items-center gap-1 text-[11px] font-black text-slate-700">
-          ◎ 지원 직무
+          ◷ 시간
         </small>
         <Dropdown
-          label={SESSION_TARGETS[0]}
-          options={SESSION_TARGETS}
-          onSelect={(v) => onSelect?.('target', v)}
+          label="20분"
+          options={['10분', '20분', '30분']}
+          onSelect={(v) => onSelect?.('time', v)}
+        />
+      </div>
+      <div className="px-3 py-3">
+        <small className="mb-[7px] flex items-center gap-1 text-[11px] font-black text-slate-700">
+          ◎ 연습 목적
+        </small>
+        <Dropdown
+          label="실전 대비"
+          options={['실전 대비', '면접 합격', '발표 리허설']}
+          onSelect={(v) => onSelect?.('purpose', v)}
         />
       </div>
     </div>

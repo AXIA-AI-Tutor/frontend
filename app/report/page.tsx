@@ -1,5 +1,1 @@
-import { PrototypeScreenPage } from '@/components/layout/PrototypeScreenPage'
-
-export default function ReportPage() {
-  return <PrototypeScreenPage current="report" />
-}
+// 세션 리포트 화면

@@ -15,9 +15,7 @@ export function ScoreRow({ scores }: ScoreRowProps) {
           key={label}
           className="rounded-xl border border-slate-200 bg-white p-2 text-center"
         >
-          <span className="block text-[10px] font-black text-slate-500">
-            {label}
-          </span>
+          <span className="block text-[10px] font-black text-slate-500">{label}</span>
           <b className="text-sm">{score.toFixed(1)}</b>
         </div>
       ))}

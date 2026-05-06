@@ -1,28 +1,17 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import type { SessionMode } from '@/types/session'
-
-const SESSION_MODE_LABELS: Record<SessionMode, string> = {
-  INTERVIEW: '면접',
-  PRESENTATION: '발표',
-}
+import type { Mode } from '@/types'
 
 interface ModeSegmentProps {
-  mode: SessionMode
-  onChange: (mode: SessionMode) => void
-  className?: string
+  mode: Mode
+  onChange: (mode: Mode) => void
 }
 
-export function ModeSegment({ mode, onChange, className }: ModeSegmentProps) {
+export function ModeSegment({ mode, onChange }: ModeSegmentProps) {
   return (
-    <div
-      className={cn(
-        'mt-4 grid grid-cols-2 gap-1 rounded-[18px] border border-white/70 bg-white/70 p-[5px]',
-        className
-      )}
-    >
-      {(Object.keys(SESSION_MODE_LABELS) as SessionMode[]).map((m) => (
+    <div className="mt-4 grid grid-cols-2 gap-1 rounded-[18px] border border-white/70 bg-white/70 p-[5px]">
+      {(['면접', '발표'] as Mode[]).map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
@@ -33,7 +22,7 @@ export function ModeSegment({ mode, onChange, className }: ModeSegmentProps) {
               : 'bg-transparent text-slate-400'
           )}
         >
-          {SESSION_MODE_LABELS[m]}
+          {m}
         </button>
       ))}
     </div>
