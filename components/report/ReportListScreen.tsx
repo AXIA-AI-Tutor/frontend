@@ -4,14 +4,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { Screen } from '@/types'
-import type {
-  SessionDifficulty,
-  SessionMode,
-  SessionResponse,
-} from '@/types/session'
+import type { ReportListItem } from '@/types/report'
+import type { SessionDifficulty, SessionMode } from '@/types/session'
 
 interface ReportListScreenProps {
-  sessions: SessionResponse[]
+  items: ReportListItem[]
   onNavigate: (screen: Screen) => void
   onToast: (msg: string) => void
 }
@@ -46,11 +43,8 @@ function formatDuration(startedAt: string, completedAt: string | null) {
   return `${minutes}분 진행`
 }
 
-export function ReportListScreen({
-  sessions,
-  onNavigate,
-}: ReportListScreenProps) {
-  const completed = sessions.filter((s) => s.status === 'COMPLETED')
+export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
+  const completed = items.filter((i) => i.session.status === 'COMPLETED')
 
   return (
     <>
@@ -76,7 +70,7 @@ export function ReportListScreen({
           </div>
         ) : (
           <ul className="flex flex-col gap-2">
-            {completed.map((session) => {
+            {completed.map(({ session, report }) => {
               const duration = formatDuration(
                 session.startedAt,
                 session.completedAt
@@ -89,7 +83,7 @@ export function ReportListScreen({
                     className="w-full rounded-[18px] border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-black text-slate-950">
                             {MODE_LABEL[session.mode]} · {session.target}
@@ -114,11 +108,22 @@ export function ReportListScreen({
                           )}
                         </div>
                       </div>
-                      <ChevronRight
-                        size={16}
-                        className="shrink-0 text-slate-300"
-                        strokeWidth={2.5}
-                      />
+                      <div className="flex shrink-0 items-center gap-2">
+                        {report?.totalScore != null ? (
+                          <span className="text-sm font-black text-blue-600">
+                            {report.totalScore}점
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-slate-300">
+                            집계 중
+                          </span>
+                        )}
+                        <ChevronRight
+                          size={16}
+                          className="text-slate-300"
+                          strokeWidth={2.5}
+                        />
+                      </div>
                     </div>
                   </button>
                 </li>

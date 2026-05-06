@@ -22,7 +22,7 @@ import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
 import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
-import { MOCK_COMPLETED_SESSIONS } from '@/lib/mock/sessions.mock'
+import { MOCK_REPORT_LIST } from '@/lib/mock/sessions.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
@@ -164,7 +164,7 @@ export function PrototypeScreenPage({
     ),
     reportList: (
       <ReportListScreen
-        sessions={MOCK_COMPLETED_SESSIONS}
+        items={MOCK_REPORT_LIST}
         onNavigate={navigate}
         onToast={showToast}
       />
