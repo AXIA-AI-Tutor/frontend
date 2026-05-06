@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
 
+// 하드코딩 필요 판단: 코치 아바타 목록 (향후 백엔드 코치 유형 API 연동 예정)
 const AVATARS = [
   {
     name: 'AI 코치 아바타',
