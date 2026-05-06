@@ -56,21 +56,11 @@ export function HomeScreen({
     <>
       <div className="lg:hidden">
         {/* 상단 그라디언트 헤더 */}
-        <div
-          className="h-16 px-[18px] pt-2 text-white"
-          style={{
-            background:
-              'linear-gradient(135deg,#2e96ff 0%,#3d72ff 42%,#7c3aed 100%)',
-          }}
-        >
+        <div className="h-16 bg-[linear-gradient(135deg,#2e96ff_0%,#3d72ff_42%,#7c3aed_100%)] px-4.5 pt-2 text-white">
           <div className="flex items-center justify-between">
             <div className="text-[31px] font-black tracking-tight">
               AI 코치{' '}
-              <span
-                style={{
-                  filter: 'drop-shadow(0 8px 14px rgba(255,255,255,.24))',
-                }}
-              >
+              <span className="drop-shadow-[0_8px_14px_rgba(255,255,255,.24)]">
                 ✦
               </span>
             </div>
@@ -79,7 +69,7 @@ export function HomeScreen({
               type="button"
               onClick={isAuthenticated ? onLogout : undefined}
               disabled={!isAuthenticated || isLoggingOut}
-              className="relative grid h-[45px] w-[45px] place-items-center overflow-hidden rounded-full bg-white/90 text-blue-700 shadow-lg disabled:cursor-default"
+              className="relative grid h-11.25 w-11.25 place-items-center overflow-hidden rounded-full bg-white/90 text-blue-700 shadow-lg disabled:cursor-default"
               aria-label={isAuthenticated ? '로그아웃' : '게스트 프로필'}
             >
               <span className="text-base font-black text-blue-700">
@@ -98,7 +88,7 @@ export function HomeScreen({
           </div>
         </div>
 
-        <div className="px-[18px] pt-2">
+        <div className="px-4.5 pt-2">
           <ModeSegment
             mode={mode}
             onChange={handleModeChange}
@@ -108,13 +98,11 @@ export function HomeScreen({
 
         {/* 스크롤 가능한 콘텐츠 */}
         <div
-          className="absolute left-3.5 right-3.5 overflow-auto pb-2"
-          style={{ top: 132, bottom: 70 }}
+          className="absolute left-3.5 right-3.5 top-33 bottom-17.5 overflow-auto pb-2"
         >
           {/* 오늘의 연습 */}
           <div
-            className="relative mb-2.5 min-h-[108px] rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm"
-            style={{ paddingRight: 92 }}
+            className="relative mb-2.5 min-h-27 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 pr-23 shadow-sm"
           >
             <h3 className="mb-1.5 text-[17px] font-black">오늘의 연습</h3>
             <p className="text-[12.5px] leading-snug text-slate-600">
@@ -123,14 +111,7 @@ export function HomeScreen({
                 : '발표자료 흐름에 맞춘 리허설 질문으로\n전달력을 다듬어보세요.'}
             </p>
             {/* 타겟 일러스트 (원형 데코) */}
-            <div
-              className="absolute right-4 top-6 h-[68px] w-[68px] rounded-full"
-              style={{
-                background:
-                  'radial-gradient(circle at center,#fff 0 22%,#dce7ff 23% 42%,#fff 43% 52%,#a8bfff 53% 68%,#eef3ff 69%)',
-                boxShadow: 'inset 0 0 0 1px #d5def8',
-              }}
-            />
+            <div className="absolute right-4 top-6 h-17 w-17 rounded-full bg-[radial-gradient(circle_at_center,#fff_0_22%,#dce7ff_23%_42%,#fff_43%_52%,#a8bfff_53%_68%,#eef3ff_69%)] shadow-[inset_0_0_0_1px_#d5def8]" />
           </div>
 
           {/* 자료 업로드 */}
@@ -163,11 +144,7 @@ export function HomeScreen({
           {/* 연습 시작 CTA */}
           <button
             onClick={() => onNavigate('live')}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 py-[15px] text-lg font-black text-white"
-            style={{
-              background: 'linear-gradient(135deg,#1689ff,#7c3aed)',
-              boxShadow: '0 13px 26px rgba(55,86,255,.25)',
-            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
           >
             ▶ 연습 시작
           </button>
