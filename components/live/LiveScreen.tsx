@@ -23,9 +23,8 @@ interface LiveScreenProps {
   onNavigate: (screen: Screen, options?: LiveNavigationOptions) => void
   onToast: (msg: string) => void
   initialTurnNumber: number
+  answerTimeLimitSec?: number // 백엔드: SessionResponse.answerTimeLimitSec
 }
-
-const TOTAL_DURATION_SECONDS = 180
 
 function pad(n: number) {
   return String(n).padStart(2, '0')
@@ -39,6 +38,7 @@ export function LiveScreen({
   onNavigate,
   onToast,
   initialTurnNumber,
+  answerTimeLimitSec = 180,
 }: LiveScreenProps) {
   const [seconds, setSeconds] = useState(0)
   const [eye, setEye] = useState(86)
@@ -78,17 +78,14 @@ export function LiveScreen({
     tickRef.current = setInterval(() => {
       if (!isRecording) return
 
-      const nextSeconds = Math.min(
-        secondsRef.current + 1,
-        TOTAL_DURATION_SECONDS
-      )
+      const nextSeconds = Math.min(secondsRef.current + 1, answerTimeLimitSec)
 
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
       setEye(82 + Math.floor(Math.random() * 8))
       setPose(4 + Math.floor(Math.random() * 8))
 
-      if (nextSeconds >= TOTAL_DURATION_SECONDS && !didReachLimitRef.current) {
+      if (nextSeconds >= answerTimeLimitSec && !didReachLimitRef.current) {
         didReachLimitRef.current = true
         setIsRecording(false)
         requestFeedbackGeneration(turnNumber)
@@ -98,14 +95,20 @@ export function LiveScreen({
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
     }
-  }, [isRecording, onToast, requestFeedbackGeneration, turnNumber])
+  }, [
+    answerTimeLimitSec,
+    isRecording,
+    onToast,
+    requestFeedbackGeneration,
+    turnNumber,
+  ])
 
   useEffect(() => {
     return clearFeedbackTimer
   }, [clearFeedbackTimer])
 
   const timeStr = formatDuration(seconds)
-  const totalDurationStr = formatDuration(TOTAL_DURATION_SECONDS)
+  const totalDurationStr = formatDuration(answerTimeLimitSec)
   const turn = getLiveTurn(turnNumber)
   const { question, hint } = turn
 

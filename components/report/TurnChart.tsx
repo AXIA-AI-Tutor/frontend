@@ -1,17 +1,15 @@
 'use client'
 
+import type { TurnChartPoint } from '@/types/report'
+
 interface TurnChartProps {
+  points: TurnChartPoint[]
   onPointClick?: (idx: number, msg: string) => void
 }
 
-const POINTS = [
-  { x: 18, y: 57, label: 'T1', msg: 'T1: 구조는 좋지만 예시 부족' },
-  { x: 48, y: 35, label: 'T2', msg: 'T2: 구체성이 개선됨' },
-  { x: 80, y: 18, label: 'T3', msg: 'T3: 종합 점수 82점' },
-]
-const SCORE_LINE_POINTS = POINTS.map(({ x, y }) => `${x},${y}`).join(' ')
+export function TurnChart({ points, onPointClick }: TurnChartProps) {
+  const scoreLinePoints = points.map(({ x, y }) => `${x},${y}`).join(' ')
 
-export function TurnChart({ onPointClick }: TurnChartProps) {
   return (
     <div className="h-[138px] lg:h-[166px]">
       <h3 className="text-sm font-black">턴별 점수 변화</h3>
@@ -46,12 +44,12 @@ export function TurnChart({ onPointClick }: TurnChartProps) {
             fill="none"
             stroke="#2563eb"
             strokeWidth="4"
-            points={SCORE_LINE_POINTS}
+            points={scoreLinePoints}
             vectorEffect="non-scaling-stroke"
           />
         </svg>
 
-        {POINTS.map(({ x, y, label, msg }, idx) => (
+        {points.map(({ x, y, label, msg }, idx) => (
           <button
             key={label}
             type="button"
@@ -63,7 +61,7 @@ export function TurnChart({ onPointClick }: TurnChartProps) {
           />
         ))}
 
-        {POINTS.map(({ x, label }) => (
+        {points.map(({ x, label }) => (
           <span
             key={label}
             className="pointer-events-none absolute bottom-1 hidden -translate-x-1/2 text-[10px] font-bold text-slate-400 lg:block"

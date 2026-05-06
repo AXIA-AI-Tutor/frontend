@@ -2,11 +2,8 @@
 
 import { create } from 'zustand'
 
-import {
-  fetchCurrentUser,
-  logoutCurrentUser,
-  type CurrentUser,
-} from '@/lib/api/auth'
+import { fetchCurrentUser, logoutCurrentUser } from '@/lib/api/auth'
+import type { UserMeResponse } from '@/types/user'
 
 export type AuthStatus =
   | 'idle'
@@ -16,18 +13,18 @@ export type AuthStatus =
   | 'error'
 
 interface AuthState {
-  user: CurrentUser | null
+  user: UserMeResponse | null
   status: AuthStatus
   errorMessage: string
   initialize: () => Promise<void>
-  refreshCurrentUser: () => Promise<CurrentUser | null>
+  refreshCurrentUser: () => Promise<UserMeResponse | null>
   logout: () => Promise<void>
   markLoginRedirectStarted: () => void
   clearSession: () => void
   clearError: () => void
 }
 
-let currentUserRequest: Promise<CurrentUser | null> | null = null
+let currentUserRequest: Promise<UserMeResponse | null> | null = null
 
 function requestCurrentUser() {
   currentUserRequest ??= fetchCurrentUser().finally(() => {

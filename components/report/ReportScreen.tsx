@@ -9,43 +9,12 @@ import { TaskList } from '@/components/report/TaskList'
 import { MemoryChips } from '@/components/report/MemoryChips'
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { Screen } from '@/types'
+import type { ReportData } from '@/types/report'
 
 interface ReportScreenProps {
   onNavigate: (screen: Screen) => void
   onToast: (msg: string) => void
-  summary?: ReportSessionSummary
-}
-
-interface ReportSessionSummary {
-  latestSessionDate: string
-  score: number
-  previousDeltaScore: number
-  averageScore: number
-  peerPercentile: number
-}
-
-const STRENGTHS = ['논리적 구조', '전달력 유지', '핵심 키워드 사용']
-const WEAKNESSES = ['구체성 부족', '답변 길이 편차', '전환 표현 어색함']
-const TASKS = [
-  {
-    icon: '🎙',
-    title: '구체적 사례 답변 연습',
-    sub: 'STAR 기법으로 사례 구체화',
-  },
-  { icon: '◷', title: '답변 확장 연습', sub: '20초 → 45초 구조 확장' },
-]
-const MEMORY_CHIPS = [
-  '선호 톤: 차분/신뢰감',
-  '목표 직무: IT 기획',
-  '반복 약점: 구체성 부족',
-  '학습 목표: 논리적 구조 강화',
-]
-const DEFAULT_SUMMARY: ReportSessionSummary = {
-  latestSessionDate: '2026. 05. 05',
-  score: 82,
-  previousDeltaScore: 12,
-  averageScore: 78,
-  peerPercentile: 23,
+  data: ReportData
 }
 
 function formatDeltaScore(deltaScore: number) {
@@ -60,11 +29,8 @@ function formatDeltaScore(deltaScore: number) {
   return '지난 세션과 같은 점수예요.'
 }
 
-export function ReportScreen({
-  onNavigate,
-  onToast,
-  summary = DEFAULT_SUMMARY,
-}: ReportScreenProps) {
+export function ReportScreen({ onNavigate, onToast, data }: ReportScreenProps) {
+  const { summary } = data
   const scoreStats = [
     { val: `${summary.averageScore}점`, label: '평균 점수' },
     { val: `상위 ${summary.peerPercentile}%`, label: '비슷한 사용자 대비' },
@@ -113,7 +79,7 @@ export function ReportScreen({
                 {formatDeltaScore(summary.previousDeltaScore)}
               </h3>
               <p className="mt-1 text-[11.5px] text-slate-500">
-                논리적 구조와 답변 길이가 크게 개선되었어요.
+                {data.improvementNote}
               </p>
               <div className="mt-2 grid grid-cols-2 gap-[7px]">
                 {scoreStats.map(({ val, label }) => (
@@ -134,17 +100,23 @@ export function ReportScreen({
 
         {/* 차트 */}
         <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <TurnChart onPointClick={(_, msg) => onToast(msg)} />
+          <TurnChart
+            points={data.turnChartPoints}
+            onPointClick={(_, msg) => onToast(msg)}
+          />
         </div>
 
         {/* 강점 / 약점 */}
         <div className="mb-2.5">
-          <StrengthWeakness strengths={STRENGTHS} weaknesses={WEAKNESSES} />
+          <StrengthWeakness
+            strengths={data.strengths}
+            weaknesses={data.weaknesses}
+          />
         </div>
 
         {/* 추천 과제 */}
         <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <TaskList tasks={TASKS} onStart={onNavigate} />
+          <TaskList tasks={data.tasks} onStart={onNavigate} />
         </div>
 
         {/* 저장된 피드백 */}
@@ -154,14 +126,13 @@ export function ReportScreen({
             <span className="text-[11px] text-blue-600">전체 보기 ›</span>
           </h3>
           <p className="text-[12.5px] text-slate-600">
-            ❝ 결론을 먼저 말하는 연습이 좋아요!{' '}
-            <span className="float-right">▱</span>
+            ❝ {data.savedFeedbackPreview} <span className="float-right">▱</span>
           </p>
         </div>
 
         {/* 개인 메모리 */}
         <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <MemoryChips chips={MEMORY_CHIPS} />
+          <MemoryChips chips={data.memoryChips} />
         </div>
       </div>
 

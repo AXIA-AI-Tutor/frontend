@@ -1,12 +1,7 @@
 import { apiClient, isApiError, type ApiResponse } from './client'
+import type { UserMeResponse } from '@/types/user'
 
-export interface CurrentUser {
-  id: number
-  email: string
-  nickname: string
-  profileImageUrl: string | null
-  role: string
-}
+export type { UserMeResponse }
 
 function getApiBaseUrl() {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL
@@ -45,10 +40,10 @@ export async function logoutCurrentUser() {
   throw new Error('로그아웃하지 못했습니다.')
 }
 
-export async function fetchCurrentUser(): Promise<CurrentUser | null> {
+export async function fetchCurrentUser(): Promise<UserMeResponse | null> {
   try {
     const response =
-      await apiClient.get<ApiResponse<CurrentUser>>('/api/users/me')
+      await apiClient.get<ApiResponse<UserMeResponse>>('/api/users/me')
 
     return response.data.data
   } catch (error) {

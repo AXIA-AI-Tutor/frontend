@@ -1,6 +1,30 @@
 'use client'
 
 import { Dropdown } from '@/components/ui/Dropdown'
+import type { SessionDifficulty, SessionTarget } from '@/types/session'
+
+const DIFFICULTY_LABELS: Record<SessionDifficulty, string> = {
+  EASY: '쉬움',
+  NORMAL: '보통',
+  HARD: '어려움',
+}
+
+const LABEL_TO_DIFFICULTY = Object.fromEntries(
+  (Object.entries(DIFFICULTY_LABELS) as [SessionDifficulty, string][]).map(
+    ([k, v]) => [v, k]
+  )
+) as Record<string, SessionDifficulty>
+
+const SESSION_TARGETS: SessionTarget[] = [
+  'BACKEND',
+  'FRONTEND',
+  'FULLSTACK',
+  'AI_ML',
+  'DATA',
+  'DEVOPS',
+  'MOBILE',
+  'QA',
+]
 
 interface SessionOptionsProps {
   onSelect?: (key: string, value: string) => void
@@ -14,19 +38,11 @@ export function SessionOptions({ onSelect }: SessionOptionsProps) {
           ▮ 난이도
         </small>
         <Dropdown
-          label="보통"
-          options={['쉬움', '보통', '어려움']}
-          onSelect={(v) => onSelect?.('difficulty', v)}
-        />
-      </div>
-      <div className="px-3 py-3">
-        <small className="mb-[7px] flex items-center gap-1 text-[11px] font-black text-slate-700">
-          ◷ 시간
-        </small>
-        <Dropdown
-          label="20분"
-          options={['10분', '20분', '30분']}
-          onSelect={(v) => onSelect?.('time', v)}
+          label={DIFFICULTY_LABELS.NORMAL}
+          options={Object.values(DIFFICULTY_LABELS)}
+          onSelect={(label) =>
+            onSelect?.('difficulty', LABEL_TO_DIFFICULTY[label] ?? label)
+          }
         />
       </div>
       <div className="px-3 py-3">
@@ -34,18 +50,9 @@ export function SessionOptions({ onSelect }: SessionOptionsProps) {
           ◎ 지원 직무
         </small>
         <Dropdown
-          label="BACKEND"
-          options={[
-            'BACKEND',
-            'FRONTEND',
-            'FULLSTACK',
-            'AI_ML',
-            'DATA',
-            'DEVOPS',
-            'MOBILE',
-            'QA',
-          ]}
-          onSelect={(v) => onSelect?.('purpose', v)}
+          label={SESSION_TARGETS[0]}
+          options={SESSION_TARGETS}
+          onSelect={(v) => onSelect?.('target', v)}
         />
       </div>
     </div>

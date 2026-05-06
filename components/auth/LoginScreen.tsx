@@ -19,6 +19,7 @@ import {
 import { getGoogleOAuthAuthorizationUrl } from '@/lib/api/auth'
 import { selectIsAuthChecking, useAuthStore } from '@/lib/stores/auth'
 
+// 하드코딩 필요 판단: 로그인 화면 기능 설명 카피 (UI 고정)
 const CHECK_ITEMS = ['세션 기록 이어보기', '맞춤 피드백 저장', '연습 자료 관리']
 
 function getRequestedRedirectPath() {
@@ -206,6 +207,7 @@ export function LoginScreen() {
               </div>
 
               <div className="grid grid-cols-3 border-t pb-6 border-white/10">
+                {/* 하드코딩 필요 판단: 로그인 화면 홍보용 고정 수치 (UI 전용) */}
                 {[
                   ['82점', '최근 점수'],
                   ['3개', '추천 과제'],
