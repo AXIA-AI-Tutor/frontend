@@ -17,7 +17,8 @@ import { SessionSummary } from '@/components/home/SessionSummary'
 import { Toggle } from '@/components/ui/Toggle'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { useAuthStore } from '@/lib/stores/auth'
-import type { Mode, Screen } from '@/types'
+import type { Screen } from '@/types'
+import type { SessionMode } from '@/types/session'
 
 interface HomeScreenProps {
   isLoggingOut: boolean
@@ -26,13 +27,18 @@ interface HomeScreenProps {
   onToast: (msg: string) => void
 }
 
+const SESSION_MODE_LABELS: Record<SessionMode, string> = {
+  INTERVIEW: '면접',
+  PRESENTATION: '발표',
+}
+
 export function HomeScreen({
   isLoggingOut,
   onLogout,
   onNavigate,
   onToast,
 }: HomeScreenProps) {
-  const [mode, setMode] = useState<Mode>('면접')
+  const [mode, setMode] = useState<SessionMode>('INTERVIEW')
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -41,9 +47,9 @@ export function HomeScreen({
     : 'Guest'
   const profileInitial = profileName.slice(0, 1).toUpperCase()
 
-  const handleModeChange = (m: Mode) => {
+  const handleModeChange = (m: SessionMode) => {
     setMode(m)
-    onToast(`${m} 모드로 전환되었습니다.`)
+    onToast(`${SESSION_MODE_LABELS[m]} 모드로 전환되었습니다.`)
   }
 
   return (
@@ -112,7 +118,7 @@ export function HomeScreen({
           >
             <h3 className="mb-1.5 text-[17px] font-black">오늘의 연습</h3>
             <p className="text-[12.5px] leading-snug text-slate-600">
-              {mode === '면접'
+              {mode === 'INTERVIEW'
                 ? '지원한 포지션에 맞는 예상 질문으로\n실력을 키워보세요.'
                 : '발표자료 흐름에 맞춘 리허설 질문으로\n전달력을 다듬어보세요.'}
             </p>
@@ -176,7 +182,7 @@ export function HomeScreen({
             <div className="flex items-start justify-between gap-6">
               <div className="max-w-2xl">
                 <p className="mb-2 text-sm font-bold text-blue-600">
-                  {mode} 모드
+                  {SESSION_MODE_LABELS[mode]} 모드
                 </p>
                 <h2 className="text-3xl font-black tracking-tight text-slate-950">
                   오늘의 연습을 시작해볼까요?

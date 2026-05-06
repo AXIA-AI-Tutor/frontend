@@ -2,70 +2,77 @@
 
 import { useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
+import type { DocumentType } from '@/types/document'
 
-const ITEMS = [
-  { icon: '📄', label: '이력서' },
-  { icon: '✎', label: '자소서' },
-  { icon: '💼', label: '포트폴리오' },
-  { icon: '📋', label: 'JD' },
-] as const
+interface DocumentItem {
+  docType: DocumentType
+  icon: string
+  label: string
+}
+
+const DOCUMENT_ITEMS: DocumentItem[] = [
+  { docType: 'RESUME', icon: '📄', label: '이력서' },
+  { docType: 'COVER_LETTER', icon: '✎', label: '자소서' }, // 하드코딩 필요 판단: 백엔드 미구현
+  { docType: 'PORTFOLIO', icon: '💼', label: '포트폴리오' },
+  { docType: 'JOB_DESCRIPTION', icon: '📋', label: 'JD' },
+]
 
 interface UploadGridProps {
-  onUpload?: (label: string) => void
-  onDelete?: (label: string) => void
+  onUpload?: (docType: DocumentType, label: string) => void
+  onDelete?: (docType: DocumentType, label: string) => void
 }
 
 export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
-  const [files, setFiles] = useState<Record<string, File>>({})
-  const [pendingLabel, setPendingLabel] = useState<string | null>(null)
-  const [manageLabel, setManageLabel] = useState<string | null>(null)
+  const [files, setFiles] = useState<Partial<Record<DocumentType, File>>>({})
+  const [pendingItem, setPendingItem] = useState<DocumentItem | null>(null)
+  const [manageItem, setManageItem] = useState<DocumentItem | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const openFilePicker = (label: string) => {
-    setPendingLabel(label)
+  const openFilePicker = (item: DocumentItem) => {
+    setPendingItem(item)
     inputRef.current?.click()
   }
 
-  const handleClick = (label: string) => {
-    if (files[label]) {
-      setManageLabel(label)
+  const handleClick = (item: DocumentItem) => {
+    if (files[item.docType]) {
+      setManageItem(item)
       return
     }
 
-    openFilePicker(label)
+    openFilePicker(item)
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
-    if (file && pendingLabel) {
-      setFiles((prev) => ({ ...prev, [pendingLabel]: file }))
-      setManageLabel(null)
-      onUpload?.(pendingLabel)
+    if (file && pendingItem) {
+      setFiles((prev) => ({ ...prev, [pendingItem.docType]: file }))
+      setManageItem(null)
+      onUpload?.(pendingItem.docType, pendingItem.label)
     }
 
     event.target.value = ''
-    setPendingLabel(null)
+    setPendingItem(null)
   }
 
   const handleChangeFile = () => {
-    if (!manageLabel) return
-    openFilePicker(manageLabel)
+    if (!manageItem) return
+    openFilePicker(manageItem)
   }
 
   const handleDeleteFile = () => {
-    if (!manageLabel) return
+    if (!manageItem) return
 
     setFiles((prev) => {
       const next = { ...prev }
-      delete next[manageLabel]
+      delete next[manageItem.docType]
       return next
     })
-    onDelete?.(manageLabel)
-    setManageLabel(null)
+    onDelete?.(manageItem.docType, manageItem.label)
+    setManageItem(null)
   }
 
-  const selectedFile = manageLabel ? files[manageLabel] : undefined
+  const selectedFile = manageItem ? files[manageItem.docType] : undefined
 
   return (
     <>
@@ -78,14 +85,15 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
         tabIndex={-1}
       />
       <div className="grid grid-cols-4 gap-[7px]">
-        {ITEMS.map(({ icon, label }) => {
-          const done = Boolean(files[label])
+        {DOCUMENT_ITEMS.map((item) => {
+          const { docType, icon, label } = item
+          const done = Boolean(files[docType])
           return (
             <button
-              key={label}
+              key={docType}
               type="button"
-              onClick={() => handleClick(label)}
-              title={files[label]?.name}
+              onClick={() => handleClick(item)}
+              title={files[docType]?.name}
               className={cn(
                 'relative min-h-[88px] rounded-[14px] border bg-white px-1 py-[11px] text-center transition-all duration-200',
                 done
@@ -116,11 +124,11 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
         })}
       </div>
 
-      {manageLabel && (
+      {manageItem && (
         <div
           className="fixed inset-0 z-[120] grid place-items-center bg-slate-950/45 px-4"
           onClick={(event) => {
-            if (event.target === event.currentTarget) setManageLabel(null)
+            if (event.target === event.currentTarget) setManageItem(null)
           }}
         >
           <div
@@ -131,7 +139,7 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
           >
             <button
               type="button"
-              onClick={() => setManageLabel(null)}
+              onClick={() => setManageItem(null)}
               className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full text-lg font-black text-slate-500 hover:bg-slate-100"
               aria-label="파일 관리 모달 닫기"
             >
@@ -141,7 +149,7 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
               id="upload-manage-title"
               className="pr-8 text-base font-black text-slate-950"
             >
-              {manageLabel} 자료 관리
+              {manageItem.label} 자료 관리
             </h3>
             <p className="mx-auto mt-3 max-w-[260px] text-sm leading-6 text-slate-600">
               첨부된 파일을 수정하거나 삭제할 수 있습니다.
