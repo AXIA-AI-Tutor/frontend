@@ -18,6 +18,9 @@ import { HomeScreen } from '@/components/home/HomeScreen'
 import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
+import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
+import { getMockTurn } from '@/lib/mock/live.mock'
+import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
@@ -142,11 +145,19 @@ export function PrototypeScreenPage({
     feedback: (
       <FeedbackScreen
         turnNumber={turnNumber}
+        turn={getMockTurn(turnNumber)}
+        feedback={getMockFeedbackData(turnNumber)}
         onNavigate={navigate}
         onToast={showToast}
       />
     ),
-    report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
+    report: (
+      <ReportScreen
+        data={MOCK_REPORT_DATA}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
   }
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
