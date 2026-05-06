@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { AnswerResponse } from '@/types/answer'
-import type { ReportListItem } from '@/types/report'
+import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
 import type { Screen } from '@/types'
 import type { SessionMode } from '@/types/session'
 
@@ -27,11 +27,38 @@ const SCREEN_PATHS: Record<Screen, string> = {
   reportList: '/report/list',
 }
 
+const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
+  READY: '집계 완료',
+  MISSING: '리포트 없음',
+  GENERATING: '집계 중',
+  FAILED: '생성 실패',
+}
+
+const STT_STATUS_LABEL: Record<AnswerResponse['sttStatus'], string> = {
+  PENDING: '전사 대기',
+  COMPLETED: '전사 완료',
+  FAILED: '전사 실패',
+}
+
+const STT_STATUS_COLOR: Record<AnswerResponse['sttStatus'], string> = {
+  PENDING: 'bg-slate-100 text-slate-500',
+  COMPLETED: 'bg-emerald-50 text-emerald-600',
+  FAILED: 'bg-red-50 text-red-600',
+}
+
 function formatDuration(sec: number | null) {
   if (sec == null) return null
   const m = Math.floor(sec / 60)
   const s = sec % 60
   return m > 0 ? `${m}분 ${s}초` : `${s}초`
+}
+
+function formatMetric(value: number | null) {
+  return value == null ? null : Math.round(value)
+}
+
+function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
+  return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
 }
 
 export function SessionAnswerListScreen({
@@ -40,6 +67,7 @@ export function SessionAnswerListScreen({
 }: SessionAnswerListScreenProps) {
   const router = useRouter()
   const { session, report } = item
+  const reportStatus = getReportStatus(item)
 
   const handleNavigate = (screen: Screen) => {
     router.push(SCREEN_PATHS[screen])
@@ -82,7 +110,7 @@ export function SessionAnswerListScreen({
             <p className="mt-0.5 text-2xl font-black text-blue-600">
               {report?.totalScore != null
                 ? `${report.totalScore}점`
-                : '집계 중'}
+                : REPORT_STATUS_LABEL[reportStatus]}
             </p>
           </div>
         </div>
@@ -97,6 +125,8 @@ export function SessionAnswerListScreen({
             {answers.map((answer, index) => {
               const turn = index + 1
               const duration = formatDuration(answer.durationSec)
+              const eyeContactScore = formatMetric(answer.eyeContactScore)
+              const postureScore = formatMetric(answer.postureScore)
               return (
                 <li key={answer.answerId}>
                   <button
@@ -120,6 +150,19 @@ export function SessionAnswerListScreen({
                             {duration}
                           </p>
                         )}
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-black ${STT_STATUS_COLOR[answer.sttStatus]}`}
+                          >
+                            {STT_STATUS_LABEL[answer.sttStatus]}
+                          </span>
+                          {eyeContactScore != null && (
+                            <span>시선 {eyeContactScore}점</span>
+                          )}
+                          {postureScore != null && (
+                            <span>자세 {postureScore}점</span>
+                          )}
+                        </div>
                       </div>
                       <ChevronRight
                         size={16}

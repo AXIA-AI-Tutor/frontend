@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { Screen } from '@/types'
-import type { ReportListItem } from '@/types/report'
+import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
 import type { SessionDifficulty, SessionMode } from '@/types/session'
 
 interface ReportListScreenProps {
@@ -31,6 +31,13 @@ const DIFFICULTY_COLOR: Record<SessionDifficulty, string> = {
   HARD: 'border-orange-200 bg-orange-50 text-orange-700',
 }
 
+const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
+  READY: '완료',
+  MISSING: '리포트 없음',
+  GENERATING: '집계 중',
+  FAILED: '생성 실패',
+}
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
   return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`
@@ -42,6 +49,10 @@ function formatDuration(startedAt: string, completedAt: string | null) {
     (new Date(completedAt).getTime() - new Date(startedAt).getTime()) / 60000
   )
   return `${minutes}분 진행`
+}
+
+function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
+  return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
 }
 
 export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
@@ -72,11 +83,13 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
           </div>
         ) : (
           <ul className="flex flex-col gap-2 mt-2.5">
-            {completed.map(({ session, report }) => {
+            {completed.map((item) => {
+              const { session, report } = item
               const duration = formatDuration(
                 session.startedAt,
                 session.completedAt
               )
+              const reportStatus = getReportStatus(item)
               return (
                 <li key={session.id}>
                   <button
@@ -117,7 +130,7 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
                           </span>
                         ) : (
                           <span className="text-[11px] text-slate-300">
-                            집계 중
+                            {REPORT_STATUS_LABEL[reportStatus]}
                           </span>
                         )}
                         <ChevronRight

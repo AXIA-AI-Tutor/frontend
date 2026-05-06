@@ -10,10 +10,17 @@ export interface ReportResponse {
   createdAt: string
 }
 
+export type ReportAvailabilityStatus =
+  | 'READY'
+  | 'MISSING'
+  | 'GENERATING'
+  | 'FAILED'
+
 // ReportListScreen용 세션-리포트 묶음 타입
 export interface ReportListItem {
   session: SessionResponse
   report: ReportResponse | null
+  reportStatus?: ReportAvailabilityStatus
 }
 
 // ── 아래는 ReportScreen(대시보드) 전용 프로토타입 타입 ──────────────────────

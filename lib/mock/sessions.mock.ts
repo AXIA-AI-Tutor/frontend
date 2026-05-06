@@ -22,6 +22,7 @@ export const MOCK_REPORT_LIST: ReportListItem[] = [
       improvements: '구체성 부족\n답변 길이 편차',
       createdAt: '2026-05-05T10:30:00',
     },
+    reportStatus: 'READY',
   },
   {
     session: {
@@ -44,6 +45,7 @@ export const MOCK_REPORT_LIST: ReportListItem[] = [
       improvements: '전환 표현 어색함\n예시 부족',
       createdAt: '2026-05-03T14:25:00',
     },
+    reportStatus: 'READY',
   },
   {
     session: {
@@ -59,6 +61,7 @@ export const MOCK_REPORT_LIST: ReportListItem[] = [
       createdAt: '2026-05-01T08:55:00',
     },
     report: null,
+    reportStatus: 'GENERATING',
   },
   {
     session: {
@@ -81,5 +84,6 @@ export const MOCK_REPORT_LIST: ReportListItem[] = [
       improvements: '침묵 구간 다소 많음',
       createdAt: '2026-04-28T16:28:00',
     },
+    reportStatus: 'READY',
   },
 ]

@@ -41,6 +41,11 @@ export function FeedbackScreen({
   const router = useRouter()
   const [saved, setSaved] = useState(false)
   const isReportSource = feedbackSource === 'report'
+  const answerText = feedback.answer || '답변 전사 결과가 없습니다.'
+  const summary = feedback.summary || '생성된 피드백 요약이 없습니다.'
+  const evidence = feedback.evidence || '생성된 근거가 없습니다.'
+  const improvementExample =
+    feedback.improvedExample || '생성된 개선 예시가 없습니다.'
 
   const handleSave = () => {
     setSaved((value) => !value)
@@ -116,26 +121,22 @@ export function FeedbackScreen({
               <b className="mb-1 block text-xs font-black text-slate-950">
                 내 답변
               </b>
-              {feedback.answer}
+              {answerText}
             </div>
           </section>
 
           <section className="mt-4 grid gap-3">
-            <FeedbackBlock title="한 줄 요약">{feedback.summary}</FeedbackBlock>
+            <FeedbackBlock title="한 줄 요약">{summary}</FeedbackBlock>
 
             <FeedbackBlock title="근거">
-              <ul className="list-disc pl-4">
-                {feedback.rationale.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              <p className="whitespace-pre-line">{evidence}</p>
             </FeedbackBlock>
 
             <FeedbackBlock title="개선 예시" example>
-              &ldquo;{feedback.improvedExample}&rdquo;
+              &ldquo;{improvementExample}&rdquo;
             </FeedbackBlock>
 
-            <FeedbackBlock title="세부 점수 (5점 만점)">
+            <FeedbackBlock title="세부 점수 (100점 기준)">
               <ScoreRow scores={feedback.scores} />
             </FeedbackBlock>
           </section>
