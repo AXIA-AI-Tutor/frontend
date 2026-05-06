@@ -1,11 +1,5 @@
 // 백엔드 미구현: report 도메인 추가 예정
 
-export interface ReportTask {
-  icon: string
-  title: string
-  sub: string
-}
-
 export interface TurnChartPoint {
   x: number // SVG viewBox 기준 x 퍼센트
   y: number // SVG viewBox 기준 y 퍼센트
@@ -26,9 +20,6 @@ export interface ReportData {
   summary: ReportSessionSummary
   strengths: string[]
   weaknesses: string[]
-  tasks: ReportTask[]
-  memoryChips: string[]
-  savedFeedbackPreview: string
   improvementNote: string
   turnChartPoints: TurnChartPoint[]
 }
