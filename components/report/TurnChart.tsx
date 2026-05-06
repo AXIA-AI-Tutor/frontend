@@ -56,7 +56,9 @@ export function TurnChart({ points, onPointClick }: TurnChartProps) {
             type="button"
             onClick={() => onPointClick?.(idx, msg)}
             className="absolute h-3.25 w-3.25 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-blue-600 shadow-md transition-transform hover:scale-125 left-(--point-x) top-(--point-y)"
-            style={{ '--point-x': `${x}%`, '--point-y': `${y}%` } as CSSProperties}
+            style={
+              { '--point-x': `${x}%`, '--point-y': `${y}%` } as CSSProperties
+            }
             title={msg}
             aria-label={msg}
           />

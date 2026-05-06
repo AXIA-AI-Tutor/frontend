@@ -168,16 +168,7 @@ export function PrototypeScreenPage({
 
   return (
     <AuthGate>
-      <div
-        className="min-h-screen"
-        style={{
-          background: `
-          radial-gradient(circle at 15% 0%, rgba(77,154,255,.18), transparent 32%),
-          radial-gradient(circle at 88% 8%, rgba(139,92,246,.16), transparent 38%),
-          linear-gradient(180deg,#fbfcff 0%,#f5f7ff 100%)
-        `,
-        }}
-      >
+      <div className="min-h-screen bg-[radial-gradient(circle_at_15%_0%,rgba(77,154,255,.18),transparent_32%),radial-gradient(circle_at_88%_8%,rgba(139,92,246,.16),transparent_38%),linear-gradient(180deg,#fbfcff_0%,#f5f7ff_100%)]">
         <div className="mx-auto max-w-[1480px] px-0 pb-0 pt-0 lg:px-6 lg:pb-6 lg:pt-5">
           <header className="hidden items-center justify-between border-b border-slate-200 pb-4 lg:flex">
             <div>

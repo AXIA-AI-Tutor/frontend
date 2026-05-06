@@ -6,7 +6,6 @@ import {
   ClipboardList,
   Loader2,
   LogOut,
-  ShieldCheck,
   UploadCloud,
 } from 'lucide-react'
 import { ModeSegment } from '@/components/home/ModeSegment'
@@ -14,7 +13,6 @@ import { UploadGrid } from '@/components/home/UploadGrid'
 import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
-import { Toggle } from '@/components/ui/Toggle'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { useAuthStore } from '@/lib/stores/auth'
 import type { Screen } from '@/types'
@@ -97,13 +95,9 @@ export function HomeScreen({
         </div>
 
         {/* 스크롤 가능한 콘텐츠 */}
-        <div
-          className="absolute left-3.5 right-3.5 top-33 bottom-17.5 overflow-auto pb-2"
-        >
+        <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 overflow-auto pb-2">
           {/* 오늘의 연습 */}
-          <div
-            className="relative mb-2.5 min-h-27 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 pr-23 shadow-sm"
-          >
+          <div className="relative mb-2.5 min-h-27 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 pr-23 shadow-sm">
             <h3 className="mb-1.5 text-[17px] font-black">오늘의 연습</h3>
             <p className="text-[12.5px] leading-snug text-slate-600">
               {mode === 'INTERVIEW'
