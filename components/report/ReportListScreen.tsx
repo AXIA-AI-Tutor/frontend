@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
@@ -44,12 +45,13 @@ function formatDuration(startedAt: string, completedAt: string | null) {
 }
 
 export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
+  const router = useRouter()
   const completed = items.filter((i) => i.session.status === 'COMPLETED')
 
   return (
     <>
       {/* 헤더 */}
-      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm lg:hidden">
+      <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
         <button
           type="button"
           onClick={() => onNavigate('report')}
@@ -58,7 +60,9 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
         </button>
-        <h2 className="text-base font-black text-slate-950">리포트 목록</h2>
+        <h2 className="text-base font-black text-slate-950 lg:hidden">
+          리포트 목록
+        </h2>
         <div className="h-9 w-9" aria-hidden />
       </header>
 
@@ -79,7 +83,7 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
                 <li key={session.id}>
                   <button
                     type="button"
-                    onClick={() => onNavigate('feedback')}
+                    onClick={() => router.push(`/report/${session.id}`)}
                     className="w-full rounded-[18px] border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
                   >
                     <div className="flex items-center justify-between gap-2">
