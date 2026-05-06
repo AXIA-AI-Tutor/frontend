@@ -66,16 +66,26 @@ export function SessionAnswerListScreen({
       {/* 콘텐츠 */}
       <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
         {/* 리포트 요약 */}
-        {report && (
-          <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
+        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm lg:flex lg:items-center lg:gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/report/list')}
+            className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 lg:grid"
+            aria-label="리포트 목록으로 돌아가기"
+          >
+            <ChevronLeft size={20} strokeWidth={2.5} />
+          </button>
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] font-bold text-slate-400">
               이 세션 종합 점수
             </p>
             <p className="mt-0.5 text-2xl font-black text-blue-600">
-              {report.totalScore != null ? `${report.totalScore}점` : '집계 중'}
+              {report?.totalScore != null
+                ? `${report.totalScore}점`
+                : '집계 중'}
             </p>
           </div>
-        )}
+        </div>
 
         {/* 턴 목록 */}
         {answers.length === 0 ? (
@@ -91,7 +101,9 @@ export function SessionAnswerListScreen({
                 <li key={answer.answerId}>
                   <button
                     type="button"
-                    onClick={() => router.push(`/feedback?turn=${turn}`)}
+                    onClick={() =>
+                      router.push(`/feedback?turn=${turn}&from=report`)
+                    }
                     className="w-full rounded-[18px] border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
                   >
                     <div className="flex items-center gap-3">

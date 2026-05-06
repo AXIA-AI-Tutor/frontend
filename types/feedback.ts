@@ -1,5 +1,7 @@
 // 백엔드: domain/answer 기반 (프론트엔드에서 '턴 피드백'으로 표시)
 
+export type FeedbackSource = 'live' | 'report'
+
 export interface FeedbackScore {
   label: string
   score: number

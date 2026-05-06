@@ -60,9 +60,7 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
         </button>
-        <h2 className="text-base font-black text-slate-950 lg:hidden">
-          리포트 목록
-        </h2>
+        <h2 className="text-base font-black text-slate-950">리포트 목록</h2>
         <div className="h-9 w-9" aria-hidden />
       </header>
 
@@ -73,7 +71,7 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
             <p className="text-sm text-slate-400">완료된 세션이 없습니다.</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-2 mt-2.5">
             {completed.map(({ session, report }) => {
               const duration = formatDuration(
                 session.startedAt,

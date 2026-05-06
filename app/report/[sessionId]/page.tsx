@@ -1,9 +1,15 @@
 import { notFound } from 'next/navigation'
 
-import { AuthGate } from '@/components/auth/AuthGate'
+import { PrototypeScreenPage } from '@/components/layout/PrototypeScreenPage'
 import { SessionAnswerListScreen } from '@/components/report/SessionAnswerListScreen'
 import { MOCK_ANSWERS_BY_SESSION } from '@/lib/mock/answers.mock'
 import { MOCK_REPORT_LIST } from '@/lib/mock/sessions.mock'
+import type { SessionMode } from '@/types/session'
+
+const MODE_LABEL: Record<SessionMode, string> = {
+  INTERVIEW: '면접',
+  PRESENTATION: '발표',
+}
 
 export default async function SessionReportPage(
   props: PageProps<'/report/[sessionId]'>
@@ -22,16 +28,11 @@ export default async function SessionReportPage(
   }
 
   const answers = MOCK_ANSWERS_BY_SESSION[id] ?? []
+  const title = `${MODE_LABEL[item.session.mode]} · ${item.session.target}`
 
   return (
-    <AuthGate>
-      <div className="min-h-screen bg-[#f8faff]">
-        <div className="mx-auto max-w-[430px]">
-          <section className="relative min-h-[812px]">
-            <SessionAnswerListScreen item={item} answers={answers} />
-          </section>
-        </div>
-      </div>
-    </AuthGate>
+    <PrototypeScreenPage current="reportList" title={title}>
+      <SessionAnswerListScreen item={item} answers={answers} />
+    </PrototypeScreenPage>
   )
 }

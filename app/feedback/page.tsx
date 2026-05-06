@@ -1,4 +1,5 @@
 import { PrototypeScreenPage } from '@/components/layout/PrototypeScreenPage'
+import type { FeedbackSource } from '@/types/feedback'
 
 function getTurnNumber(value: string | string[] | undefined) {
   const turn = Number(Array.isArray(value) ? value[0] : value)
@@ -10,6 +11,14 @@ function getTurnNumber(value: string | string[] | undefined) {
   return turn
 }
 
+function getFeedbackSource(
+  value: string | string[] | undefined
+): FeedbackSource {
+  const source = Array.isArray(value) ? value[0] : value
+
+  return source === 'report' ? 'report' : 'live'
+}
+
 export default async function FeedbackPage(props: PageProps<'/feedback'>) {
   const searchParams = await props.searchParams
 
@@ -17,6 +26,7 @@ export default async function FeedbackPage(props: PageProps<'/feedback'>) {
     <PrototypeScreenPage
       current="feedback"
       turnNumber={getTurnNumber(searchParams.turn)}
+      feedbackSource={getFeedbackSource(searchParams.from)}
     />
   )
 }
