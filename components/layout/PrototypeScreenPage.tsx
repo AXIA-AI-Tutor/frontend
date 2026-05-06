@@ -111,16 +111,16 @@ export function PrototypeScreenPage({
 
     try {
       await logout()
-      router.replace('/login')
-      router.refresh()
+      // router.replace 대신 window.location.replace를 사용해 전체 페이지 이동을 강제한다.
+      // client-side router와 AuthGate의 useEffect가 경쟁하면서 /live에 남는 문제를 방지한다.
+      window.location.replace('/login')
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : '로그아웃하지 못했습니다.'
       )
-    } finally {
       setIsLoggingOut(false)
     }
-  }, [isLoggingOut, logout, router, showToast])
+  }, [isLoggingOut, logout, showToast])
 
   const screenComponents: Record<Screen, React.ReactNode> = {
     home: (
@@ -151,7 +151,7 @@ export function PrototypeScreenPage({
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
   const userDisplayName = isAuthenticated
-    ? user?.name || user?.email || '사용자'
+    ? user?.nickname || user?.email || '사용자'
     : '게스트'
   const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
 

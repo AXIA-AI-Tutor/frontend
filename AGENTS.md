@@ -22,7 +22,7 @@ AI 면접/발표 코치 앱 프론트엔드.
 
 # 런타임 요구사항
 
-- Node.js 20.9.0 이상을 사용한다.
+- Node.js 22.x를 사용한다.
 - `npm install` 후 작업한다.
 - `node_modules/next/dist/docs/`의 문서를 Next.js 구현 기준으로 삼는다.
 

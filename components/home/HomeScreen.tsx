@@ -33,12 +33,11 @@ export function HomeScreen({
   onToast,
 }: HomeScreenProps) {
   const [mode, setMode] = useState<Mode>('면접')
-  const [privacy, setPrivacy] = useState(true)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
   const profileName = isAuthenticated
-    ? user?.name || user?.email || '사용자'
+    ? user?.nickname || user?.email || '사용자'
     : 'Guest'
   const profileInitial = profileName.slice(0, 1).toUpperCase()
 
