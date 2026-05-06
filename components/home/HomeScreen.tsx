@@ -145,6 +145,18 @@ export function HomeScreen({
           </button>
         </div>
 
+        {sessionOverlayVisible && (
+          <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 z-30 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+            <button
+              type="button"
+              onClick={() => setSessionOverlayVisible(false)}
+              className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
+            >
+              ▶ 세션 시작하기
+            </button>
+          </div>
+        )}
+
         <BottomNav current="home" onNavigate={onNavigate} />
       </div>
 
