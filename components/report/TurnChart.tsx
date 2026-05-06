@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties } from 'react'
 import type { TurnChartPoint } from '@/types/report'
 
 interface TurnChartProps {
@@ -11,9 +12,9 @@ export function TurnChart({ points, onPointClick }: TurnChartProps) {
   const scoreLinePoints = points.map(({ x, y }) => `${x},${y}`).join(' ')
 
   return (
-    <div className="h-[138px] lg:h-[166px]">
+    <div className="h-34.5 lg:h-41.5">
       <h3 className="text-sm font-black">턴별 점수 변화</h3>
-      <div className="relative mt-2 h-[84px] overflow-hidden border-b border-l border-slate-200 lg:mt-3 lg:h-[118px]">
+      <div className="relative mt-2 h-21 overflow-hidden border-b border-l border-slate-200 lg:mt-3 lg:h-29.5">
         <svg
           className="absolute inset-0 h-full w-full"
           viewBox="0 0 100 100"
@@ -54,8 +55,8 @@ export function TurnChart({ points, onPointClick }: TurnChartProps) {
             key={label}
             type="button"
             onClick={() => onPointClick?.(idx, msg)}
-            className="absolute h-[13px] w-[13px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-blue-600 shadow-md transition-transform hover:scale-125"
-            style={{ left: `${x}%`, top: `${y}%` }}
+            className="absolute h-3.25 w-3.25 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-white bg-blue-600 shadow-md transition-transform hover:scale-125 left-(--point-x) top-(--point-y)"
+            style={{ '--point-x': `${x}%`, '--point-y': `${y}%` } as CSSProperties}
             title={msg}
             aria-label={msg}
           />
@@ -64,8 +65,8 @@ export function TurnChart({ points, onPointClick }: TurnChartProps) {
         {points.map(({ x, label }) => (
           <span
             key={label}
-            className="pointer-events-none absolute bottom-1 hidden -translate-x-1/2 text-[10px] font-bold text-slate-400 lg:block"
-            style={{ left: `${x}%` }}
+            className="pointer-events-none absolute bottom-1 hidden -translate-x-1/2 text-[10px] font-bold text-slate-400 lg:block left-(--point-x)"
+            style={{ '--point-x': `${x}%` } as CSSProperties}
             aria-hidden="true"
           >
             {label}

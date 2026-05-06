@@ -15,8 +15,7 @@ export function StrengthWeakness({
           {strengths.map((s) => (
             <li
               key={s}
-              className="mb-1 text-[10.8px] leading-snug"
-              style={{ color: '#10b981' }}
+              className="mb-1 text-[10.8px] leading-snug text-emerald-500"
             >
               <span className="text-slate-700">{s}</span>
             </li>
@@ -29,8 +28,7 @@ export function StrengthWeakness({
           {weaknesses.map((w) => (
             <li
               key={w}
-              className="mb-1 text-[10.8px] leading-snug"
-              style={{ color: '#ef4444' }}
+              className="mb-1 text-[10.8px] leading-snug text-red-500"
             >
               <span className="text-slate-700">{w}</span>
             </li>

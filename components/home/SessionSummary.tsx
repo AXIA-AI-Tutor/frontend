@@ -10,10 +10,7 @@ interface SessionSummaryProps {
 export function SessionSummary({ onNavigate }: SessionSummaryProps) {
   return (
     <>
-      <div
-        className="flex items-center justify-between"
-        style={{ fontSize: 15 }}
-      >
+      <div className="flex items-center justify-between text-[15px]">
         <div className="flex items-center gap-2">
           <Archive className="text-blue-600" size={20} />
           <h3 className="text-base font-black text-slate-950">
