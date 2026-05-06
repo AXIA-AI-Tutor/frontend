@@ -66,7 +66,7 @@ export function ReportScreen({ onNavigate, onToast, data }: ReportScreenProps) {
               className="inline-flex h-5.5 lg:h-8 shrink-0 items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 text-[11px] font-black text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 lg:text-xs"
             >
               <Eye size={14} strokeWidth={2.4} />
-              바로 확인
+              세션별 리포트 확인
             </button>
           </div>
 
