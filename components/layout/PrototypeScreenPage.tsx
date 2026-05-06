@@ -16,11 +16,13 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { HomeScreen } from '@/components/home/HomeScreen'
 import { LiveScreen } from '@/components/live/LiveScreen'
+import { ReportListScreen } from '@/components/report/ReportListScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
 import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
+import { MOCK_COMPLETED_SESSIONS } from '@/lib/mock/sessions.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
@@ -30,6 +32,7 @@ const SCREEN_PATHS: Record<Screen, string> = {
   live: '/live',
   feedback: '/feedback',
   report: '/report',
+  reportList: '/report/list',
 }
 
 const SCREEN_LABELS: Record<Screen, string> = {
@@ -37,6 +40,7 @@ const SCREEN_LABELS: Record<Screen, string> = {
   live: '실시간 연습',
   feedback: '턴 피드백',
   report: '세션 리포트',
+  reportList: '리포트 목록',
 }
 
 const DESKTOP_NAV_ITEMS = [
@@ -158,6 +162,13 @@ export function PrototypeScreenPage({
         onToast={showToast}
       />
     ),
+    reportList: (
+      <ReportListScreen
+        sessions={MOCK_COMPLETED_SESSIONS}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
   }
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -237,7 +248,8 @@ export function PrototypeScreenPage({
                       onClick={() => navigate(screen)}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                        current === screen
+                        current === screen ||
+                          (current === 'reportList' && screen === 'report')
                           ? 'bg-blue-50 text-blue-700'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
                       )}
