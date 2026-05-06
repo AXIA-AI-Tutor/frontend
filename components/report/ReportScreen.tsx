@@ -5,8 +5,6 @@ import { ChevronLeft, Eye } from 'lucide-react'
 import { ScoreRing } from '@/components/report/ScoreRing'
 import { TurnChart } from '@/components/report/TurnChart'
 import { StrengthWeakness } from '@/components/report/StrengthWeakness'
-import { TaskList } from '@/components/report/TaskList'
-import { MemoryChips } from '@/components/report/MemoryChips'
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { Screen } from '@/types'
 import type { ReportData } from '@/types/report'
@@ -112,27 +110,6 @@ export function ReportScreen({ onNavigate, onToast, data }: ReportScreenProps) {
             strengths={data.strengths}
             weaknesses={data.weaknesses}
           />
-        </div>
-
-        {/* 추천 과제 */}
-        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <TaskList tasks={data.tasks} onStart={onNavigate} />
-        </div>
-
-        {/* 저장된 피드백 */}
-        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <h3 className="mb-1.5 flex items-center justify-between text-[15px] font-black">
-            저장된 피드백
-            <span className="text-[11px] text-blue-600">전체 보기 ›</span>
-          </h3>
-          <p className="text-[12.5px] text-slate-600">
-            ❝ {data.savedFeedbackPreview} <span className="float-right">▱</span>
-          </p>
-        </div>
-
-        {/* 개인 메모리 */}
-        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
-          <MemoryChips chips={data.memoryChips} />
         </div>
       </div>
 
