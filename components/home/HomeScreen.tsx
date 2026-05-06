@@ -38,7 +38,7 @@ export function HomeScreen({
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
   const profileName = isAuthenticated
-    ? user?.name || user?.email || '사용자'
+    ? user?.nickname || user?.email || '사용자'
     : 'Guest'
   const profileInitial = profileName.slice(0, 1).toUpperCase()
 

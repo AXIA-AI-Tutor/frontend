@@ -151,7 +151,7 @@ export function PrototypeScreenPage({
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
   const userDisplayName = isAuthenticated
-    ? user?.name || user?.email || '사용자'
+    ? user?.nickname || user?.email || '사용자'
     : '게스트'
   const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
 

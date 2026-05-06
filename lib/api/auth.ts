@@ -1,19 +1,21 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+import { apiClient, isApiError, type ApiResponse } from './client'
 
 export interface CurrentUser {
-  id?: number | string
-  name?: string
-  email?: string
-  imageUrl?: string
-  [key: string]: unknown
+  id: number
+  email: string
+  nickname: string
+  profileImageUrl: string | null
+  role: string
 }
 
 function getApiBaseUrl() {
-  if (!API_BASE_URL) {
+  const url = process.env.NEXT_PUBLIC_API_BASE_URL
+
+  if (!url) {
     throw new Error('NEXT_PUBLIC_API_BASE_URL 환경 변수가 필요합니다.')
   }
 
-  return API_BASE_URL.replace(/\/$/, '')
+  return url.replace(/\/$/, '')
 }
 
 export function getGoogleOAuthAuthorizationUrl() {
@@ -21,6 +23,8 @@ export function getGoogleOAuthAuthorizationUrl() {
 }
 
 export async function logoutCurrentUser() {
+  // Spring Security의 /logout은 세션 무효화 후 302 리다이렉트를 반환하므로
+  // axios 대신 fetch + redirect: 'manual'로 opaqueredirect를 처리한다.
   const response = await fetch(`${getApiBaseUrl()}/logout`, {
     cache: 'no-store',
     credentials: 'include',
@@ -41,31 +45,20 @@ export async function logoutCurrentUser() {
   throw new Error('로그아웃하지 못했습니다.')
 }
 
-export async function fetchCurrentUser() {
-  const response = await fetch(`${getApiBaseUrl()}/api/users/me`, {
-    cache: 'no-store',
-    credentials: 'include',
-    redirect: 'manual',
-    headers: {
-      Accept: 'application/json',
-    },
-  })
+export async function fetchCurrentUser(): Promise<CurrentUser | null> {
+  try {
+    const response =
+      await apiClient.get<ApiResponse<CurrentUser>>('/api/users/me')
 
-  if (response.type === 'opaqueredirect') {
-    return null
+    return response.data.data
+  } catch (error) {
+    if (
+      isApiError(error) &&
+      (error.response?.status === 401 || error.response?.status === 403)
+    ) {
+      return null
+    }
+
+    throw error
   }
-
-  if (response.status === 401 || response.status === 403) {
-    return null
-  }
-
-  if (response.status >= 300 && response.status < 400) {
-    return null
-  }
-
-  if (!response.ok) {
-    throw new Error('현재 로그인한 사용자를 불러오지 못했습니다.')
-  }
-
-  return (await response.json()) as CurrentUser
 }
