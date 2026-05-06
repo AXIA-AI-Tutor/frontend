@@ -33,7 +33,6 @@ export function HomeScreen({
   onToast,
 }: HomeScreenProps) {
   const [mode, setMode] = useState<Mode>('면접')
-  const [privacy, setPrivacy] = useState(true)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
