@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   Bookmark,
@@ -14,7 +15,7 @@ import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
-import type { FeedbackData, TurnData } from '@/types/feedback'
+import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
 
 interface FeedbackNavigationOptions {
   turnNumber?: number
@@ -24,6 +25,7 @@ interface FeedbackScreenProps {
   turnNumber: number
   turn: TurnData
   feedback: FeedbackData
+  feedbackSource?: FeedbackSource
   onNavigate: (screen: Screen, options?: FeedbackNavigationOptions) => void
   onToast: (msg: string) => void
 }
@@ -32,10 +34,18 @@ export function FeedbackScreen({
   turnNumber,
   turn,
   feedback,
+  feedbackSource = 'live',
   onNavigate,
   onToast,
 }: FeedbackScreenProps) {
+  const router = useRouter()
   const [saved, setSaved] = useState(false)
+  const isReportSource = feedbackSource === 'report'
+  const answerText = feedback.answer || '답변 전사 결과가 없습니다.'
+  const summary = feedback.summary || '생성된 피드백 요약이 없습니다.'
+  const evidence = feedback.evidence || '생성된 근거가 없습니다.'
+  const improvementExample =
+    feedback.improvedExample || '생성된 개선 예시가 없습니다.'
 
   const handleSave = () => {
     setSaved((value) => !value)
@@ -50,6 +60,20 @@ export function FeedbackScreen({
     onNavigate('live', { turnNumber })
   }
 
+  const handleBack = () => {
+    if (isReportSource) {
+      if (window.history.length > 1) {
+        router.back()
+        return
+      }
+
+      router.push('/report/list')
+      return
+    }
+
+    handleRetryTurn()
+  }
+
   return (
     <>
       <div className="absolute inset-0 overflow-auto bg-[#f8faff] px-4 pb-[92px] pt-5 text-slate-950 lg:static lg:min-h-[calc(100vh-132px)] lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm">
@@ -57,9 +81,13 @@ export function FeedbackScreen({
           <header className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={handleRetryTurn}
+              onClick={handleBack}
               className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-              aria-label="실시간 연습으로 돌아가기"
+              aria-label={
+                isReportSource
+                  ? '이전 리포트 화면으로 돌아가기'
+                  : '실시간 연습으로 돌아가기'
+              }
             >
               <ArrowLeft size={18} />
             </button>
@@ -93,65 +121,66 @@ export function FeedbackScreen({
               <b className="mb-1 block text-xs font-black text-slate-950">
                 내 답변
               </b>
-              {feedback.answer}
+              {answerText}
             </div>
           </section>
 
           <section className="mt-4 grid gap-3">
-            <FeedbackBlock title="한 줄 요약">{feedback.summary}</FeedbackBlock>
+            <FeedbackBlock title="한 줄 요약">{summary}</FeedbackBlock>
 
             <FeedbackBlock title="근거">
-              <ul className="list-disc pl-4">
-                {feedback.rationale.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+              <p className="whitespace-pre-line">{evidence}</p>
             </FeedbackBlock>
 
             <FeedbackBlock title="개선 예시" example>
-              &ldquo;{feedback.improvedExample}&rdquo;
+              &ldquo;{improvementExample}&rdquo;
             </FeedbackBlock>
 
-            <FeedbackBlock title="세부 점수 (5점 만점)">
+            <FeedbackBlock title="세부 점수 (100점 기준)">
               <ScoreRow scores={feedback.scores} />
             </FeedbackBlock>
           </section>
 
-          <div className="mt-4 grid grid-cols-[1fr_.9fr_1.1fr] gap-2">
-            <button
-              type="button"
-              onClick={handleRetryTurn}
-              className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-            >
-              <RotateCcw size={16} />
-              다시 답변
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              className={cn(
-                'inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-black shadow-sm transition-colors',
-                saved
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              )}
-            >
-              <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-              {saved ? '저장됨' : '저장'}
-            </button>
-            <button
-              type="button"
-              onClick={handleNextTurn}
-              className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 text-sm font-black text-white shadow-sm transition-colors hover:bg-blue-700"
-            >
-              다음 질문
-              <SkipForward size={16} />
-            </button>
-          </div>
+          {!isReportSource && (
+            <div className="mt-4 grid grid-cols-[1fr_.9fr_1.1fr] gap-2">
+              <button
+                type="button"
+                onClick={handleRetryTurn}
+                className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+              >
+                <RotateCcw size={16} />
+                다시 답변
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                className={cn(
+                  'inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-black shadow-sm transition-colors',
+                  saved
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
+                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                )}
+              >
+                <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
+                {saved ? '저장됨' : '저장'}
+              </button>
+              <button
+                type="button"
+                onClick={handleNextTurn}
+                className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 text-sm font-black text-white shadow-sm transition-colors hover:bg-blue-700"
+              >
+                다음 질문
+                <SkipForward size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <BottomNav current="live" onNavigate={onNavigate} />
+      <BottomNav
+        current={isReportSource ? 'report' : 'live'}
+        onNavigate={onNavigate}
+      />
     </>
   )
 }

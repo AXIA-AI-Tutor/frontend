@@ -16,20 +16,24 @@ import { AuthGate } from '@/components/auth/AuthGate'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { HomeScreen } from '@/components/home/HomeScreen'
 import { LiveScreen } from '@/components/live/LiveScreen'
+import { ReportListScreen } from '@/components/report/ReportListScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
 import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
+import { MOCK_REPORT_LIST } from '@/lib/mock/sessions.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
+import type { FeedbackSource } from '@/types/feedback'
 
 const SCREEN_PATHS: Record<Screen, string> = {
   home: '/',
   live: '/live',
   feedback: '/feedback',
   report: '/report',
+  reportList: '/report/list',
 }
 
 const SCREEN_LABELS: Record<Screen, string> = {
@@ -37,6 +41,7 @@ const SCREEN_LABELS: Record<Screen, string> = {
   live: '실시간 연습',
   feedback: '턴 피드백',
   report: '세션 리포트',
+  reportList: '리포트 목록',
 }
 
 const DESKTOP_NAV_ITEMS = [
@@ -63,15 +68,22 @@ const DESKTOP_NAV_ITEMS = [
 interface PrototypeScreenPageProps {
   current: Screen
   turnNumber?: number
+  feedbackSource?: FeedbackSource
+  title?: string
+  children?: React.ReactNode
 }
 
 interface NavigationOptions {
   turnNumber?: number
+  feedbackSource?: FeedbackSource
 }
 
 export function PrototypeScreenPage({
   current,
   turnNumber = 1,
+  feedbackSource = 'live',
+  title,
+  children,
 }: PrototypeScreenPageProps) {
   const router = useRouter()
   const [toast, setToast] = useState({ show: false, message: '' })
@@ -96,6 +108,9 @@ export function PrototypeScreenPage({
         const params = new URLSearchParams({
           turn: String(options.turnNumber),
         })
+        if (options.feedbackSource) {
+          params.set('from', options.feedbackSource)
+        }
         router.push(`${path}?${params.toString()}`)
         return
       }
@@ -147,6 +162,7 @@ export function PrototypeScreenPage({
         turnNumber={turnNumber}
         turn={getMockTurn(turnNumber)}
         feedback={getMockFeedbackData(turnNumber)}
+        feedbackSource={feedbackSource}
         onNavigate={navigate}
         onToast={showToast}
       />
@@ -158,6 +174,13 @@ export function PrototypeScreenPage({
         onToast={showToast}
       />
     ),
+    reportList: (
+      <ReportListScreen
+        items={MOCK_REPORT_LIST}
+        onNavigate={navigate}
+        onToast={showToast}
+      />
+    ),
   }
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -165,6 +188,8 @@ export function PrototypeScreenPage({
     ? user?.nickname || user?.email || '사용자'
     : '게스트'
   const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
+  const pageTitle = title ?? SCREEN_LABELS[current]
+  const content = children ?? screenComponents[current]
 
   return (
     <AuthGate>
@@ -174,7 +199,7 @@ export function PrototypeScreenPage({
             <div>
               <p className="text-sm font-bold text-blue-600">AI 코치</p>
               <h1 className="text-2xl font-black tracking-tight text-slate-950">
-                {SCREEN_LABELS[current]}
+                {pageTitle}
               </h1>
             </div>
             <div className="flex items-center gap-2">
@@ -237,7 +262,11 @@ export function PrototypeScreenPage({
                       onClick={() => navigate(screen)}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                        current === screen
+                        current === screen ||
+                          (current === 'reportList' && screen === 'report') ||
+                          (current === 'feedback' &&
+                            feedbackSource === 'report' &&
+                            screen === 'report')
                           ? 'bg-blue-50 text-blue-700'
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
                       )}
@@ -266,7 +295,7 @@ export function PrototypeScreenPage({
                     : 'lg:min-h-[calc(100vh-132px)]'
                 )}
               >
-                {screenComponents[current]}
+                {content}
               </section>
             </main>
           </div>
