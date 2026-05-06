@@ -94,21 +94,8 @@ export function CoachAvatarLive({
         <span
           className={
             hasTopBubble
-              ? 'absolute -bottom-2 left-10'
-              : 'absolute -left-2.5 top-9'
-          }
-          style={
-            hasTopBubble
-              ? {
-                  borderLeft: '8px solid transparent',
-                  borderRight: '8px solid transparent',
-                  borderTop: '12px solid white',
-                }
-              : {
-                  borderTop: '8px solid transparent',
-                  borderBottom: '8px solid transparent',
-                  borderRight: '12px solid white',
-                }
+              ? 'absolute -bottom-2 left-10 border-solid border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-12 border-t-white'
+              : 'absolute -left-2.5 top-9 border-solid border-t-8 border-t-transparent border-b-8 border-b-transparent border-r-12 border-r-white'
           }
         />
       </div>

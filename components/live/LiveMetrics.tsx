@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { LiveAudioWaveform } from '@/components/live/LiveAudioWaveform'
 
@@ -88,12 +89,12 @@ function MetricBar({ label, value, tone }: MetricBarProps) {
       <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
         <div
           className={cn(
-            'h-full rounded-full',
+            'h-full rounded-full w-(--progress-width)',
             tone === 'blue'
-              ? 'bg-gradient-to-r from-blue-500 to-sky-400'
-              : 'bg-gradient-to-r from-emerald-500 to-lime-400'
+              ? 'bg-linear-to-r from-blue-500 to-sky-400'
+              : 'bg-linear-to-r from-emerald-500 to-lime-400'
           )}
-          style={{ width: `${value}%` }}
+          style={{ '--progress-width': `${value}%` } as CSSProperties}
         />
       </div>
     </div>
