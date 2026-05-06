@@ -37,6 +37,7 @@ export function HomeScreen({
   onToast,
 }: HomeScreenProps) {
   const [mode, setMode] = useState<SessionMode>('INTERVIEW')
+  const [sessionOverlayVisible, setSessionOverlayVisible] = useState(true)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -149,79 +150,93 @@ export function HomeScreen({
 
       <div className="hidden lg:block">
         <div className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-6">
-              <div className="max-w-2xl">
-                <p className="mb-2 text-sm font-bold text-blue-600">
-                  {SESSION_MODE_LABELS[mode]} 모드
-                </p>
-                <h2 className="text-3xl font-black tracking-tight text-slate-950">
-                  오늘의 연습을 시작해볼까요?
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-slate-500">
-                  자료를 업로드하고 세션 목표를 설정하면 AI 코치가 맞춤 질문을
-                  준비합니다.
-                </p>
-              </div>
-              <div className="w-56">
-                <ModeSegment mode={mode} onChange={handleModeChange} />
-              </div>
-            </div>
-          </section>
-
-          <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
-            {/* 왼쪽 컬럼 */}
-            <div className="grid gap-4">
-              <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center gap-2">
-                  <UploadCloud className="text-blue-600" size={20} />
-                  <h3 className="text-base font-black text-slate-950">
-                    자료 업로드
-                  </h3>
+          <div className="relative space-y-4">
+            <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-6">
+                <div className="max-w-2xl">
+                  <p className="mb-2 text-sm font-bold text-blue-600">
+                    {SESSION_MODE_LABELS[mode]} 모드
+                  </p>
+                  <h2 className="text-3xl font-black tracking-tight text-slate-950">
+                    오늘의 연습을 시작해볼까요?
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    자료를 업로드하고 세션 목표를 설정하면 AI 코치가 맞춤 질문을
+                    준비합니다.
+                  </p>
                 </div>
-                <UploadGrid
-                  onUpload={(label) => onToast(`${label} 업로드 완료`)}
-                  onDelete={(label) => onToast(`${label} 삭제 완료`)}
-                />
-              </section>
-
-              <section className="relative z-20 rounded-lg border border-slate-200 bg-white shadow-sm">
-                <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
-                  <ClipboardList className="text-blue-600" size={20} />
-                  <h3 className="text-base font-black text-slate-950">
-                    세션 설정
-                  </h3>
+                <div className="w-56">
+                  <ModeSegment mode={mode} onChange={handleModeChange} />
                 </div>
-                <SessionOptions
-                  onSelect={(_, val) => onToast(`${val} 선택됨`)}
-                />
-              </section>
-            </div>
+              </div>
+            </section>
 
-            {/* 오른쪽 컬럼 */}
-            <aside className="grid min-h-0 gap-4 grid-rows-[minmax(0,1fr)_auto]">
-              <div className="min-h-0 rounded-lg border border-slate-200 bg-white shadow-sm [&>div]:h-full">
-                <AvatarCard
-                  onChangeAvatar={(name) =>
-                    onToast(`${name}(으)로 변경되었습니다.`)
-                  }
-                />
+            <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
+              {/* 왼쪽 컬럼 */}
+              <div className="grid gap-4">
+                <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center gap-2">
+                    <UploadCloud className="text-blue-600" size={20} />
+                    <h3 className="text-base font-black text-slate-950">
+                      자료 업로드
+                    </h3>
+                  </div>
+                  <UploadGrid
+                    onUpload={(label) => onToast(`${label} 업로드 완료`)}
+                    onDelete={(label) => onToast(`${label} 삭제 완료`)}
+                  />
+                </section>
+
+                <section className="relative z-20 rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+                    <ClipboardList className="text-blue-600" size={20} />
+                    <h3 className="text-base font-black text-slate-950">
+                      세션 설정
+                    </h3>
+                  </div>
+                  <SessionOptions
+                    onSelect={(_, val) => onToast(`${val} 선택됨`)}
+                  />
+                </section>
               </div>
 
-              <button
-                type="button"
-                onClick={() => onNavigate('live')}
-                className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
-              >
-                <span>
-                  <span className="block text-md font-black">연습 시작</span>
-                  <span className="block text-xs text-blue-100">
-                    설정한 자료와 목표로 실시간 연습을 시작합니다.
+              {/* 오른쪽 컬럼 */}
+              <aside className="grid min-h-0 gap-4 grid-rows-[minmax(0,1fr)_auto]">
+                <div className="min-h-0 rounded-lg border border-slate-200 bg-white shadow-sm [&>div]:h-full">
+                  <AvatarCard
+                    onChangeAvatar={(name) =>
+                      onToast(`${name}(으)로 변경되었습니다.`)
+                    }
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onNavigate('live')}
+                  className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
+                >
+                  <span>
+                    <span className="block text-md font-black">연습 시작</span>
+                    <span className="block text-xs text-blue-100">
+                      설정한 자료와 목표로 실시간 연습을 시작합니다.
+                    </span>
                   </span>
-                </span>
-                <ArrowRight size={24} />
-              </button>
-            </aside>
+                  <ArrowRight size={24} />
+                </button>
+              </aside>
+            </div>
+
+            {sessionOverlayVisible && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-white/50 backdrop-blur-[1px]">
+                <button
+                  type="button"
+                  onClick={() => setSessionOverlayVisible(false)}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700"
+                >
+                  ▶ 세션 시작하기
+                </button>
+              </div>
+            )}
           </div>
 
           <section className="rounded-lg border border-slate-200 bg-white px-5 py-3 shadow-sm">
