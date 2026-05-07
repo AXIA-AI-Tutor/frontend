@@ -1,13 +1,32 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock } from 'lucide-react'
 
 import { FeedbackBlock } from '@/components/feedback/FeedbackBlock'
 import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
 import type { Screen } from '@/types'
+import type { SttStatus } from '@/types/answer'
 import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
+
+const ANSWER_STATUS_LABEL: Record<SttStatus, string> = {
+  PENDING: '분석 대기',
+  COMPLETED: '분석 완료',
+  FAILED: '분석 실패',
+}
+
+const ANSWER_STATUS_STYLE: Record<SttStatus, string> = {
+  PENDING: 'bg-slate-100 text-slate-500',
+  COMPLETED: 'bg-emerald-50 text-emerald-600',
+  FAILED: 'bg-red-50 text-red-600',
+}
+
+const ANSWER_STATUS_ICON: Record<SttStatus, React.ReactNode> = {
+  PENDING: <Clock size={14} />,
+  COMPLETED: <CheckCircle2 size={14} />,
+  FAILED: <AlertCircle size={14} />,
+}
 
 interface FeedbackNavigationOptions {
   turnNumber?: number
@@ -18,6 +37,7 @@ interface FeedbackScreenProps {
   turn: TurnData
   feedback: FeedbackData
   feedbackSource?: FeedbackSource
+  answerStatus?: SttStatus
   onNavigate: (screen: Screen, options?: FeedbackNavigationOptions) => void
 }
 
@@ -26,6 +46,7 @@ export function FeedbackScreen({
   turn,
   feedback,
   feedbackSource = 'live',
+  answerStatus = 'COMPLETED',
   onNavigate,
 }: FeedbackScreenProps) {
   const router = useRouter()
@@ -75,9 +96,11 @@ export function FeedbackScreen({
                 {turn.topic} 답변 분석
               </h2>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-600">
-              <CheckCircle2 size={14} />
-              완료
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-black ${ANSWER_STATUS_STYLE[answerStatus]}`}
+            >
+              {ANSWER_STATUS_ICON[answerStatus]}
+              {ANSWER_STATUS_LABEL[answerStatus]}
             </span>
           </header>
 
