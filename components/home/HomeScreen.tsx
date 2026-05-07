@@ -15,10 +15,12 @@ import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
+import { uploadSessionDocument } from '@/lib/api/documents'
 import { createSession, startSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
 import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
+import type { DocumentType } from '@/types/document'
 import type {
   SessionDifficulty,
   SessionMode,
@@ -115,6 +117,72 @@ export function HomeScreen({
     }
   }
 
+  const handleDocumentUpload = async (
+    docType: DocumentType,
+    label: string,
+    file: File
+  ) => {
+    if (!sessionId) {
+      onToast('세션을 먼저 생성해 주세요.')
+      throw new Error('세션 ID가 없습니다.')
+    }
+
+    try {
+      const document = await uploadSessionDocument(sessionId, { docType, file })
+
+      // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+      // eslint-disable-next-line no-console
+      console.log('[KAN-66] document upload completed', {
+        sessionId,
+        docType,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+        document,
+      })
+      onToast(`${label} 업로드 완료`)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[KAN-66] document upload failed', {
+        sessionId,
+        docType,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+        response:
+          isApiError(error) && error.response
+            ? {
+                status: error.response.status,
+                data: error.response.data,
+              }
+            : null,
+        error,
+      })
+
+      const message =
+        isApiError(error) && error.response?.data.message
+          ? error.response.data.message
+          : error instanceof Error
+            ? error.message
+            : `${label} 업로드에 실패했습니다.`
+
+      onToast(message)
+      throw error
+    }
+  }
+
+  const handleDocumentUploadError = (
+    _docType: DocumentType,
+    label: string,
+    _file: File
+  ) => {
+    onToast(`${label} 파일을 다시 선택해 주세요.`)
+  }
+
   const handlePracticeStart = async () => {
     if (!sessionId) {
       onToast('세션을 먼저 생성해 주세요.')
@@ -151,6 +219,13 @@ export function HomeScreen({
       console.error('[KAN-66] PATCH /api/sessions/{sessionId}/start failed', {
         sessionId,
         payload,
+        response:
+          isApiError(error) && error.response
+            ? {
+                status: error.response.status,
+                data: error.response.data,
+              }
+            : null,
         error,
       })
 
@@ -226,8 +301,8 @@ export function HomeScreen({
           {/* 자료 업로드 */}
           <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
             <UploadGrid
-              onUpload={(label) => onToast(`${label} 업로드 완료`)}
-              onDelete={(label) => onToast(`${label} 삭제 완료`)}
+              onUpload={handleDocumentUpload}
+              onDelete={(_, label) => onToast(`${label} 삭제 완료`)}
             />
           </div>
 
@@ -321,8 +396,8 @@ export function HomeScreen({
                     </h3>
                   </div>
                   <UploadGrid
-                    onUpload={(label) => onToast(`${label} 업로드 완료`)}
-                    onDelete={(label) => onToast(`${label} 삭제 완료`)}
+                    onUpload={handleDocumentUpload}
+                    onDelete={(_, label) => onToast(`${label} 삭제 완료`)}
                   />
                 </section>
 
