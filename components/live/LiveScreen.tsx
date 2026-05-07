@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Play, RotateCcw, SkipForward, Square, X } from 'lucide-react'
+import { Play, SkipForward, Square, X } from 'lucide-react'
 import { LiveMetrics } from '@/components/live/LiveMetrics'
 import { CoachAvatarLive } from '@/components/live/CoachAvatarLive'
 import { TranscriptCard } from '@/components/live/TranscriptCard'
@@ -130,19 +130,6 @@ export function LiveScreen({
     onToast('연습이 중지되었습니다.')
   }
 
-  const handleRestart = () => {
-    secondsRef.current = 0
-    didReachLimitRef.current = false
-    setSeconds(0)
-    setIsRecording(true)
-    setIsAnswerLayout(true)
-    setShowStartGuide(false)
-    clearFeedbackTimer()
-    setFeedbackStatus('in-progress')
-    setWaveformResetSignal((signal) => signal + 1)
-    onToast('현재 질문을 다시 시작합니다.')
-  }
-
   const handleNextTurn = () => {
     secondsRef.current = 0
     didReachLimitRef.current = false
@@ -193,7 +180,6 @@ export function LiveScreen({
       onDismissStartGuide={() => setShowStartGuide(false)}
       onStart={handleStart}
       onStop={handleStop}
-      onRestart={handleRestart}
       onNext={handleNextTurn}
     />
   )
@@ -248,7 +234,6 @@ export function LiveScreen({
             onDismissStartGuide={() => setShowStartGuide(false)}
             onStart={handleStart}
             onStop={handleStop}
-            onRestart={handleRestart}
             onNext={handleNextTurn}
           />
         </div>
@@ -295,7 +280,6 @@ interface LiveControlsProps {
   showStartGuide: boolean
   onStart: () => void
   onStop: () => void
-  onRestart: () => void
   onNext: () => void
   onDismissStartGuide: () => void
   iconOnly?: boolean
@@ -306,7 +290,6 @@ function LiveControls({
   showStartGuide,
   onStart,
   onStop,
-  onRestart,
   onNext,
   onDismissStartGuide,
   iconOnly = false,
@@ -350,15 +333,6 @@ function LiveControls({
         </div>
         <button
           type="button"
-          onClick={onRestart}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-          aria-label="현재 질문 다시 시작"
-          title="다시 시작"
-        >
-          <RotateCcw size={15} />
-        </button>
-        <button
-          type="button"
           onClick={onNext}
           className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700"
           aria-label="다음 질문으로 이동"
@@ -371,7 +345,7 @@ function LiveControls({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-[9px] lg:gap-2">
+    <div className="grid grid-cols-2 gap-[9px] lg:gap-2">
       <div className="relative">
         <button
           type="button"
@@ -397,14 +371,6 @@ function LiveControls({
           arrow="bottom-left"
         />
       </div>
-      <button
-        type="button"
-        onClick={onRestart}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-3 font-black text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-      >
-        <RotateCcw size={15} />
-        다시
-      </button>
       <button
         type="button"
         onClick={onNext}
