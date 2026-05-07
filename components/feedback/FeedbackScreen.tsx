@@ -1,19 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  ArrowLeft,
-  Bookmark,
-  CheckCircle2,
-  RotateCcw,
-  SkipForward,
-} from 'lucide-react'
+import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 
 import { FeedbackBlock } from '@/components/feedback/FeedbackBlock'
 import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
 import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
 
@@ -27,7 +19,6 @@ interface FeedbackScreenProps {
   feedback: FeedbackData
   feedbackSource?: FeedbackSource
   onNavigate: (screen: Screen, options?: FeedbackNavigationOptions) => void
-  onToast: (msg: string) => void
 }
 
 export function FeedbackScreen({
@@ -36,29 +27,14 @@ export function FeedbackScreen({
   feedback,
   feedbackSource = 'live',
   onNavigate,
-  onToast,
 }: FeedbackScreenProps) {
   const router = useRouter()
-  const [saved, setSaved] = useState(false)
   const isReportSource = feedbackSource === 'report'
   const answerText = feedback.answer || '답변 전사 결과가 없습니다.'
   const summary = feedback.summary || '생성된 피드백 요약이 없습니다.'
   const evidence = feedback.evidence || '생성된 근거가 없습니다.'
   const improvementExample =
     feedback.improvedExample || '생성된 개선 예시가 없습니다.'
-
-  const handleSave = () => {
-    setSaved((value) => !value)
-    onToast('피드백이 개인 메모리에 저장되었습니다.')
-  }
-
-  const handleNextTurn = () => {
-    onNavigate('live', { turnNumber: turnNumber + 1 })
-  }
-
-  const handleRetryTurn = () => {
-    onNavigate('live', { turnNumber })
-  }
 
   const handleBack = () => {
     if (isReportSource) {
@@ -71,7 +47,7 @@ export function FeedbackScreen({
       return
     }
 
-    handleRetryTurn()
+    onNavigate('live')
   }
 
   return (
@@ -140,40 +116,6 @@ export function FeedbackScreen({
               <ScoreRow scores={feedback.scores} />
             </FeedbackBlock>
           </section>
-
-          {!isReportSource && (
-            <div className="mt-4 grid grid-cols-[1fr_.9fr_1.1fr] gap-2">
-              <button
-                type="button"
-                onClick={handleRetryTurn}
-                className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white text-sm font-black text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-              >
-                <RotateCcw size={16} />
-                다시 답변
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                className={cn(
-                  'inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-black shadow-sm transition-colors',
-                  saved
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
-                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                )}
-              >
-                <Bookmark size={16} fill={saved ? 'currentColor' : 'none'} />
-                {saved ? '저장됨' : '저장'}
-              </button>
-              <button
-                type="button"
-                onClick={handleNextTurn}
-                className="inline-flex h-12 items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 text-sm font-black text-white shadow-sm transition-colors hover:bg-blue-700"
-              >
-                다음 질문
-                <SkipForward size={16} />
-              </button>
-            </div>
-          )}
         </div>
       </div>
 

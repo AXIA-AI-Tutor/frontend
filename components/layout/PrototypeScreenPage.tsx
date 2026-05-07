@@ -164,7 +164,6 @@ export function PrototypeScreenPage({
         feedback={getMockFeedbackData(turnNumber)}
         feedbackSource={feedbackSource}
         onNavigate={navigate}
-        onToast={showToast}
       />
     ),
     report: (
