@@ -35,9 +35,9 @@ const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
 }
 
 const STT_STATUS_LABEL: Record<AnswerResponse['sttStatus'], string> = {
-  PENDING: '전사 대기',
-  COMPLETED: '전사 완료',
-  FAILED: '전사 실패',
+  PENDING: '분석 대기',
+  COMPLETED: '분석 완료',
+  FAILED: '분석 실패',
 }
 
 const STT_STATUS_COLOR: Record<AnswerResponse['sttStatus'], string> = {

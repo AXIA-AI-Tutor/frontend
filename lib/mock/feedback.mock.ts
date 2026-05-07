@@ -13,7 +13,7 @@ const MOCK_FEEDBACK_LIST: FeedbackData[] = [
     improvedExample:
       '"데이터 기반 의사결정으로 고객 경험을 혁신하는 귀사의 방향에 공감했습니다. 학부 프로젝트에서 사용자 행동 데이터를 분석해 전환율을 18% 개선한 경험을 바탕으로 기여하고 싶습니다."',
     scores: [
-      { label: '구조', score: 80 },
+      { label: '논리성', score: 80 },
       { label: '구체성', score: 60 },
       { label: '관련성', score: 80 },
       { label: '전달력', score: 70 },
@@ -33,7 +33,7 @@ const MOCK_FEEDBACK_LIST: FeedbackData[] = [
     improvedExample:
       '"사용자 인터뷰 5건을 통해 핵심 불편사항을 3가지로 압축했고, 이를 바탕으로 첫 출시 후 DAU를 30% 높이는 데 기여했습니다."',
     scores: [
-      { label: '구조', score: 90 },
+      { label: '논리성', score: 90 },
       { label: '구체성', score: 50 },
       { label: '관련성', score: 80 },
       { label: '전달력', score: 70 },
@@ -53,7 +53,7 @@ const MOCK_FEEDBACK_LIST: FeedbackData[] = [
     improvedExample:
       '"팀원 간 기술 스택 의견 충돌 시, 각자의 장단점을 표로 정리해 공유하고 투표로 결정하는 방식을 제안해 합의를 이끌어낸 경험이 있습니다."',
     scores: [
-      { label: '구조', score: 70 },
+      { label: '논리성', score: 70 },
       { label: '구체성', score: 40 },
       { label: '관련성', score: 70 },
       { label: '전달력', score: 80 },
