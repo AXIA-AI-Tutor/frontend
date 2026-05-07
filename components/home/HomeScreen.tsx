@@ -14,6 +14,8 @@ import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { isApiError } from '@/lib/api/client'
+import { createSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
 import type { Screen } from '@/types'
 import type { SessionMode } from '@/types/session'
@@ -37,7 +39,9 @@ export function HomeScreen({
   onToast,
 }: HomeScreenProps) {
   const [mode, setMode] = useState<SessionMode>('INTERVIEW')
+  const [sessionId, setSessionId] = useState<number | null>(null)
   const [sessionOverlayVisible, setSessionOverlayVisible] = useState(true)
+  const [isCreatingSession, setIsCreatingSession] = useState(false)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -49,6 +53,40 @@ export function HomeScreen({
   const handleModeChange = (m: SessionMode) => {
     setMode(m)
     onToast(`${SESSION_MODE_LABELS[m]} 모드로 전환되었습니다.`)
+  }
+
+  const handleCreateSession = async () => {
+    if (isCreatingSession) {
+      return
+    }
+
+    setIsCreatingSession(true)
+
+    try {
+      const session = await createSession()
+
+      setSessionId(session.id)
+      setSessionOverlayVisible(false)
+      // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+      // eslint-disable-next-line no-console
+      console.log('[KAN-66] POST /api/sessions response', {
+        sessionId: session.id,
+        session,
+      })
+      onToast(`세션 ${session.id}번이 생성되었습니다.`)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[KAN-66] POST /api/sessions failed', error)
+
+      const message =
+        isApiError(error) && error.response?.data.message
+          ? error.response.data.message
+          : '세션을 생성하지 못했습니다.'
+
+      onToast(message)
+    } finally {
+      setIsCreatingSession(false)
+    }
   }
 
   return (
@@ -139,6 +177,7 @@ export function HomeScreen({
           {/* 연습 시작 CTA */}
           <button
             onClick={() => onNavigate('live')}
+            disabled={!sessionId}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
           >
             ▶ 연습 시작
@@ -149,10 +188,17 @@ export function HomeScreen({
           <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 z-30 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
             <button
               type="button"
-              onClick={() => setSessionOverlayVisible(false)}
-              className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
+              onClick={handleCreateSession}
+              disabled={isCreatingSession}
+              aria-busy={isCreatingSession}
+              className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)] disabled:cursor-wait disabled:opacity-75"
             >
-              ▶ 세션 시작하기
+              {isCreatingSession ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                '▶'
+              )}
+              세션 시작하기
             </button>
           </div>
         )}
@@ -225,6 +271,7 @@ export function HomeScreen({
                 <button
                   type="button"
                   onClick={() => onNavigate('live')}
+                  disabled={!sessionId}
                   className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
                 >
                   <span>
@@ -242,10 +289,17 @@ export function HomeScreen({
               <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-white/50 backdrop-blur-[1px]">
                 <button
                   type="button"
-                  onClick={() => setSessionOverlayVisible(false)}
-                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700"
+                  onClick={handleCreateSession}
+                  disabled={isCreatingSession}
+                  aria-busy={isCreatingSession}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-75"
                 >
-                  ▶ 세션 시작하기
+                  {isCreatingSession ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    '▶'
+                  )}
+                  세션 시작하기
                 </button>
               </div>
             )}
