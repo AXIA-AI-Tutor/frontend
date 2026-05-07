@@ -59,7 +59,7 @@ const DESKTOP_NAV_ITEMS = [
   },
   {
     icon: BarChart3,
-    label: '세션 리포트',
+    label: '분석 결과',
     description: '성장 기록',
     screen: 'report' as Screen,
   },
