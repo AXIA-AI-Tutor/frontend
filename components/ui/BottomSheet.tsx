@@ -12,15 +12,16 @@ export function BottomSheet({ open, onClose, children }: BottomSheetProps) {
   return (
     <div
       className={cn(
-        'absolute inset-0 z-20 flex items-end',
+        'absolute inset-0 z-20 flex items-end bg-[rgba(15,23,42,.55)]',
         open ? 'flex' : 'hidden'
       )}
-      style={{ background: 'rgba(15,23,42,.55)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
       <div className="w-full rounded-t-3xl bg-white px-4 pb-6 pt-4 shadow-2xl">
         {/* 드래그 핸들 */}
-        <div className="mx-auto mb-3 h-[5px] w-11 rounded-full bg-slate-200" />
+        <div className="mx-auto mb-3 h-1.25 w-11 rounded-full bg-slate-200" />
         {children}
       </div>
     </div>

@@ -1,5 +1,7 @@
 'use client'
 
+import type { CSSProperties } from 'react'
+
 interface ScoreRingProps {
   score: number
   max?: number
@@ -10,10 +12,8 @@ export function ScoreRing({ score, max = 100 }: ScoreRingProps) {
 
   return (
     <div
-      className="relative grid h-24 w-24 place-items-center rounded-full"
-      style={{
-        background: `conic-gradient(#2563eb 0 ${pct}%, #e3e9fb ${pct}%)`,
-      }}
+      className="relative grid h-24 w-24 place-items-center rounded-full bg-[conic-gradient(#2563eb_0_var(--score-pct),#e3e9fb_var(--score-pct))]"
+      style={{ '--score-pct': `${pct}%` } as CSSProperties}
     >
       {/* 안쪽 흰 원 */}
       <div className="absolute inset-2.5 rounded-full bg-white" />

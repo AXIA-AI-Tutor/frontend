@@ -2,75 +2,81 @@
 
 export function CoachAvatar({ scale = 1 }: { scale?: number }) {
   return (
-    <div
-      className="relative"
-      style={{ width: 100 * scale, height: 118 * scale }}
-    >
-      {/* 머리카락 */}
-      <span
-        className="absolute rounded-[44px_44px_28px_28px]"
-        style={{
-          left: 14 * scale,
-          top: 4 * scale,
-          width: 72 * scale,
-          height: 74 * scale,
-          background: 'linear-gradient(135deg,#251d21,#5d4143)',
-        }}
-      />
-      {/* 얼굴 */}
-      <span
-        className="absolute"
-        style={{
-          left: 26 * scale,
-          top: 20 * scale,
-          width: 48 * scale,
-          height: 55 * scale,
-          borderRadius: '45% 45% 46% 46%',
-          background: '#ffdacc',
-        }}
+    <>
+      {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (width, height) */}
+      <div
+        className="relative"
+        style={{ width: 100 * scale, height: 118 * scale }}
       >
-        {/* 눈 */}
+        {/* 머리카락 */}
+        {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (left, top, width, height) */}
         <span
-          className="absolute"
-          style={{ top: 23 * scale, left: 11 * scale, fontSize: 13 * scale, color: '#1a1a22' }}
+          className="absolute rounded-[44px_44px_28px_28px] bg-[linear-gradient(135deg,#251d21,#5d4143)]"
+          style={{
+            left: 14 * scale,
+            top: 4 * scale,
+            width: 72 * scale,
+            height: 74 * scale,
+          }}
+        />
+        {/* 얼굴 */}
+        {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (left, top, width, height) */}
+        <span
+          className="absolute rounded-[45%_45%_46%_46%] bg-[#ffdacc]"
+          style={{
+            left: 26 * scale,
+            top: 20 * scale,
+            width: 48 * scale,
+            height: 55 * scale,
+          }}
         >
-          •&nbsp;&nbsp;&nbsp;•
+          {/* 눈 */}
+          {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (top, left, fontSize) */}
+          <span
+            className="absolute text-[#1a1a22]"
+            style={{
+              top: 23 * scale,
+              left: 11 * scale,
+              fontSize: 13 * scale,
+            }}
+          >
+            •&nbsp;&nbsp;&nbsp;•
+          </span>
+          {/* 입 */}
+          {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (left, top, width, height) */}
+          <span
+            className="absolute rounded-[0_0_10px_10px] [border-bottom:2px_solid_#c85a63]"
+            style={{
+              left: 20 * scale,
+              top: 39 * scale,
+              width: 9 * scale,
+              height: 4 * scale,
+            }}
+          />
         </span>
-        {/* 입 */}
+        {/* 몸 */}
+        {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (left, width, height) */}
         <span
-          className="absolute rounded-[0_0_10px_10px]"
+          className="absolute bottom-0 rounded-[18px_18px_0_0] bg-[linear-gradient(135deg,#94bdfb,#c4d8ff)]"
           style={{
-            left: 20 * scale,
-            top: 39 * scale,
-            width: 9 * scale,
-            height: 4 * scale,
-            borderBottom: `2px solid #c85a63`,
+            left: 10 * scale,
+            width: 80 * scale,
+            height: 55 * scale,
           }}
-        />
-      </span>
-      {/* 몸 */}
-      <span
-        className="absolute rounded-[18px_18px_0_0]"
-        style={{
-          left: 10 * scale,
-          bottom: 0,
-          width: 80 * scale,
-          height: 55 * scale,
-          background: 'linear-gradient(135deg,#94bdfb,#c4d8ff)',
-        }}
-      >
-        {/* 넥타이 */}
-        <span
-          className="absolute"
-          style={{
-            left: 33 * scale,
-            top: 0,
-            borderLeft: `${12 * scale}px solid transparent`,
-            borderRight: `${12 * scale}px solid transparent`,
-            borderTop: `${30 * scale}px solid #fff`,
-          }}
-        />
-      </span>
-    </div>
+        >
+          {/* 넥타이 */}
+          {/* tailwind 사용 불가 : scale prop 기반 동적 픽셀 계산 (left, border 크기) */}
+          <span
+            className="absolute top-0"
+            style={{
+              left: 33 * scale,
+              borderLeft: `${12 * scale}px solid transparent`,
+              borderRight: `${12 * scale}px solid transparent`,
+              borderTop: `${30 * scale}px solid #fff`,
+            }}
+          />
+        </span>
+      </div>
+    </>
   )
 }
