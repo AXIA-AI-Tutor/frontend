@@ -50,9 +50,7 @@ export async function submitAnswerWithFeedback(
   const response = await apiClient.post<
     ApiResponse<AnswerWithFeedbackResponse>
   >(`/api/sessions/${sessionId}/answers/with-feedback`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': undefined },
   })
 
   return response.data.data
