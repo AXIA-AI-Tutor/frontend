@@ -21,12 +21,42 @@ import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
+import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
 import { MOCK_REPORT_LIST } from '@/lib/mock/sessions.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
-import type { FeedbackSource } from '@/types/feedback'
+import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
+import type { TurnFeedbackEntry } from '@/lib/stores/turnFeedback'
+
+function mapToTurnData(entry: TurnFeedbackEntry): TurnData {
+  const q = entry.questionText
+  return {
+    question: q,
+    hint: entry.questionIntent ?? '',
+    topic: q.length > 16 ? q.slice(0, 16) + '…' : q,
+  }
+}
+
+function mapToFeedbackData(entry: TurnFeedbackEntry): FeedbackData {
+  const { answer, feedback } = entry.response
+  return {
+    feedbackId: feedback.feedbackId,
+    answerId: feedback.answerId,
+    createdAt: feedback.createdAt,
+    answer: answer.transcript,
+    summary: feedback.summary,
+    evidence: feedback.evidence,
+    improvedExample: feedback.improvementExample,
+    scores: [
+      { label: '논리성', score: feedback.structureScore },
+      { label: '구체성', score: feedback.specificityScore },
+      { label: '관련성', score: feedback.relevanceScore },
+      { label: '전달력', score: feedback.deliveryScore },
+    ],
+  }
+}
 
 const SCREEN_PATHS: Record<Screen, string> = {
   home: '/',
@@ -94,6 +124,7 @@ export function PrototypeScreenPage({
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
+  const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -164,8 +195,19 @@ export function PrototypeScreenPage({
     feedback: (
       <FeedbackScreen
         turnNumber={turnNumber}
-        turn={getMockTurn(turnNumber)}
-        feedback={getMockFeedbackData(turnNumber)}
+        turn={
+          turnFeedbackByTurn[turnNumber]
+            ? mapToTurnData(turnFeedbackByTurn[turnNumber])
+            : getMockTurn(turnNumber)
+        }
+        feedback={
+          turnFeedbackByTurn[turnNumber]
+            ? mapToFeedbackData(turnFeedbackByTurn[turnNumber])
+            : getMockFeedbackData(turnNumber)
+        }
+        answerStatus={
+          turnFeedbackByTurn[turnNumber]?.response.answer.sttStatus
+        }
         feedbackSource={feedbackSource}
         onNavigate={navigate}
       />

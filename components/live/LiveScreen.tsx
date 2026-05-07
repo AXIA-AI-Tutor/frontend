@@ -16,6 +16,7 @@ import { isApiError } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
 import type { AiQuestionGenerateResponse } from '@/types/session'
@@ -82,6 +83,7 @@ export function LiveScreen({
     stopRecording,
     reset: resetAudioRecorder,
   } = useAudioRecorder()
+  const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
   const didReachLimitRef = useRef(false)
@@ -158,6 +160,11 @@ export function LiveScreen({
         // eslint-disable-next-line no-console
         console.log('[KAN-66] POST answers/with-feedback response', response)
 
+        setTurnFeedback(turnNumber, {
+          questionText: question,
+          questionIntent: hint,
+          response,
+        })
         setFeedbackStatus('ready')
         onToast(`턴 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
@@ -181,11 +188,13 @@ export function LiveScreen({
     },
     [
       eye,
+      hint,
       onToast,
       pose,
       question,
       resetAudioRecorder,
       sessionId,
+      setTurnFeedback,
       stopRecording,
       turnNumber,
     ]
