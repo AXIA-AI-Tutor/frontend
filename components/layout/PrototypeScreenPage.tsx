@@ -68,6 +68,7 @@ const DESKTOP_NAV_ITEMS = [
 interface PrototypeScreenPageProps {
   current: Screen
   turnNumber?: number
+  sessionId?: number
   feedbackSource?: FeedbackSource
   title?: string
   children?: React.ReactNode
@@ -75,12 +76,14 @@ interface PrototypeScreenPageProps {
 
 interface NavigationOptions {
   turnNumber?: number
+  sessionId?: number
   feedbackSource?: FeedbackSource
 }
 
 export function PrototypeScreenPage({
   current,
   turnNumber = 1,
+  sessionId,
   feedbackSource = 'live',
   title,
   children,
@@ -103,19 +106,19 @@ export function PrototypeScreenPage({
   const navigate = useCallback(
     (screen: Screen, options?: NavigationOptions) => {
       const path = SCREEN_PATHS[screen]
+      const params = new URLSearchParams()
 
       if (options?.turnNumber) {
-        const params = new URLSearchParams({
-          turn: String(options.turnNumber),
-        })
-        if (options.feedbackSource) {
-          params.set('from', options.feedbackSource)
-        }
-        router.push(`${path}?${params.toString()}`)
-        return
+        params.set('turn', String(options.turnNumber))
+      }
+      if (options?.sessionId) {
+        params.set('sessionId', String(options.sessionId))
+      }
+      if (options?.feedbackSource) {
+        params.set('from', options.feedbackSource)
       }
 
-      router.push(path)
+      router.push(params.size > 0 ? `${path}?${params.toString()}` : path)
     },
     [router]
   )
@@ -151,8 +154,9 @@ export function PrototypeScreenPage({
     ),
     live: (
       <LiveScreen
-        key={`live-${turnNumber}`}
+        key={`live-${turnNumber}-${sessionId ?? 'mock'}`}
         initialTurnNumber={turnNumber}
+        sessionId={sessionId}
         onNavigate={navigate}
         onToast={showToast}
       />

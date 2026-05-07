@@ -23,7 +23,7 @@ import type { SessionMode } from '@/types/session'
 interface HomeScreenProps {
   isLoggingOut: boolean
   onLogout: () => void
-  onNavigate: (screen: Screen) => void
+  onNavigate: (screen: Screen, options?: { sessionId?: number }) => void
   onToast: (msg: string) => void
 }
 
@@ -87,6 +87,15 @@ export function HomeScreen({
     } finally {
       setIsCreatingSession(false)
     }
+  }
+
+  const handlePracticeStart = () => {
+    if (!sessionId) {
+      onToast('세션을 먼저 생성해 주세요.')
+      return
+    }
+
+    onNavigate('live', { sessionId })
   }
 
   return (
@@ -176,7 +185,7 @@ export function HomeScreen({
 
           {/* 연습 시작 CTA */}
           <button
-            onClick={() => onNavigate('live')}
+            onClick={handlePracticeStart}
             disabled={!sessionId}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
           >
@@ -270,7 +279,7 @@ export function HomeScreen({
 
                 <button
                   type="button"
-                  onClick={() => onNavigate('live')}
+                  onClick={handlePracticeStart}
                   disabled={!sessionId}
                   className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
                 >

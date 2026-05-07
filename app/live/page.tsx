@@ -10,6 +10,16 @@ function getTurnNumber(value: string | string[] | undefined) {
   return turn
 }
 
+function getSessionId(value: string | string[] | undefined) {
+  const sessionId = Number(Array.isArray(value) ? value[0] : value)
+
+  if (!Number.isInteger(sessionId) || sessionId < 1) {
+    return undefined
+  }
+
+  return sessionId
+}
+
 export default async function LivePage(props: PageProps<'/live'>) {
   const searchParams = await props.searchParams
 
@@ -17,6 +27,7 @@ export default async function LivePage(props: PageProps<'/live'>) {
     <PrototypeScreenPage
       current="live"
       turnNumber={getTurnNumber(searchParams.turn)}
+      sessionId={getSessionId(searchParams.sessionId)}
     />
   )
 }
