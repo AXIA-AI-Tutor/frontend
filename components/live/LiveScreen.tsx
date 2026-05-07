@@ -15,8 +15,10 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
+import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
+import type { AiQuestionGenerateResponse } from '@/types/session'
 
 interface LiveNavigationOptions {
   turnNumber?: number
@@ -49,6 +51,14 @@ function toScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
 
+function getQuestionText(question: AiQuestionGenerateResponse | null) {
+  return question?.question_text || question?.questionText || null
+}
+
+function getQuestionIntent(question: AiQuestionGenerateResponse | null) {
+  return question?.question_intent || question?.questionIntent || null
+}
+
 export function LiveScreen({
   onNavigate,
   onToast,
@@ -66,6 +76,7 @@ export function LiveScreen({
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready')
+  const sessionStart = usePracticeSessionStore((state) => state.sessionStart)
   const {
     startRecording,
     stopRecording,
@@ -77,10 +88,17 @@ export function LiveScreen({
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
 
-  const timeStr = formatDuration(seconds)
-  const totalDurationStr = formatDuration(answerTimeLimitSec)
   const turn = getLiveTurn(turnNumber)
-  const { question, hint } = turn
+  const activeSessionStart =
+    sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
+  const sessionQuestion =
+    turnNumber === 1 && activeSessionStart ? activeSessionStart.question : null
+  const question = getQuestionText(sessionQuestion) || turn.question
+  const hint = getQuestionIntent(sessionQuestion) || turn.hint
+  const effectiveAnswerTimeLimitSec =
+    activeSessionStart?.session.answerTimeLimitSec ?? answerTimeLimitSec
+  const timeStr = formatDuration(seconds)
+  const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
   const isSubmittingFeedback = feedbackStatus === 'generating'
 
   const finishAnswer = useCallback(
@@ -177,14 +195,20 @@ export function LiveScreen({
     tickRef.current = setInterval(() => {
       if (!isRecording) return
 
-      const nextSeconds = Math.min(secondsRef.current + 1, answerTimeLimitSec)
+      const nextSeconds = Math.min(
+        secondsRef.current + 1,
+        effectiveAnswerTimeLimitSec
+      )
 
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
       setEye(82 + Math.floor(Math.random() * 8))
       setPose(4 + Math.floor(Math.random() * 8))
 
-      if (nextSeconds >= answerTimeLimitSec && !didReachLimitRef.current) {
+      if (
+        nextSeconds >= effectiveAnswerTimeLimitSec &&
+        !didReachLimitRef.current
+      ) {
         didReachLimitRef.current = true
         void finishAnswer('timeout')
         onToast('제한 시간이 종료되었습니다.')
@@ -193,7 +217,7 @@ export function LiveScreen({
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
     }
-  }, [answerTimeLimitSec, finishAnswer, isRecording, onToast])
+  }, [effectiveAnswerTimeLimitSec, finishAnswer, isRecording, onToast])
 
   useEffect(() => {
     return () => {

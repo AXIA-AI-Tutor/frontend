@@ -49,3 +49,23 @@ export interface SessionStartRequest {
   target: SessionTarget
   difficulty: SessionDifficulty
 }
+
+// 백엔드: global/ai/client/dto/AiQuestionGenerateResponse.java
+export interface AiQuestionGenerateResponse {
+  question_text?: string | null
+  question_intent?: string | null
+  tts_audio_url?: string | null
+  latency_ms?: number | null
+  fallback_components?: string[] | null
+  questionText?: string | null
+  questionIntent?: string | null
+  ttsAudioUrl?: string | null
+  latencyMs?: number | null
+  fallbackComponents?: string[] | null
+}
+
+// 백엔드: domain/session/dto/SessionStartResponse.java
+export interface SessionStartResponse {
+  session: SessionResponse
+  question: AiQuestionGenerateResponse
+}
