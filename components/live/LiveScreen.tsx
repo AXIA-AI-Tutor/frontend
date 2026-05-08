@@ -51,11 +51,11 @@ function formatLocalDateTime(date: Date) {
 }
 
 function getQuestionText(question: AiQuestionGenerateResponse | null) {
-  return question?.question_text || question?.questionText || null
+  return question?.question_text || null
 }
 
 function getQuestionIntent(question: AiQuestionGenerateResponse | null) {
-  return question?.question_intent || question?.questionIntent || null
+  return question?.question_intent || null
 }
 
 export function LiveScreen({
