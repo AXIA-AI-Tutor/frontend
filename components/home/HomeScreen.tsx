@@ -55,6 +55,9 @@ export function HomeScreen({
   const setSessionStart = usePracticeSessionStore(
     (state) => state.setSessionStart
   )
+  const hasActiveSession = usePracticeSessionStore(
+    (state) => state.sessionStart !== null
+  )
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -328,7 +331,11 @@ export function HomeScreen({
           </div>
         )}
 
-        <BottomNav current="home" onNavigate={onNavigate} />
+        <BottomNav
+          current="home"
+          onNavigate={onNavigate}
+          disabledScreens={hasActiveSession ? [] : ['live']}
+        />
       </div>
 
       <div className="hidden lg:block">

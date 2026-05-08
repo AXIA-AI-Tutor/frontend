@@ -453,7 +453,11 @@ export function LiveScreen({
           />
         </div>
 
-        <BottomNav current="live" onNavigate={onNavigate} />
+        <BottomNav
+          current="live"
+          onNavigate={onNavigate}
+          disabledScreens={sessionStart ? [] : ['live']}
+        />
       </div>
 
       <div className="hidden lg:block">
