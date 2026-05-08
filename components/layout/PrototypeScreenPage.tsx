@@ -121,6 +121,9 @@ export function PrototypeScreenPage({
   const hasActiveSession = usePracticeSessionStore(
     (state) => state.sessionStart !== null
   )
+  const activeSessionId = usePracticeSessionStore(
+    (state) => state.sessionStart?.session.id ?? null
+  )
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -138,16 +141,20 @@ export function PrototypeScreenPage({
       if (options?.turnNumber) {
         params.set('turn', String(options.turnNumber))
       }
-      if (options?.sessionId) {
-        params.set('sessionId', String(options.sessionId))
+
+      const resolvedSessionId =
+        options?.sessionId ?? (screen === 'live' ? activeSessionId : null)
+      if (resolvedSessionId) {
+        params.set('sessionId', String(resolvedSessionId))
       }
+
       if (options?.feedbackSource) {
         params.set('from', options.feedbackSource)
       }
 
       router.push(params.size > 0 ? `${path}?${params.toString()}` : path)
     },
-    [router]
+    [router, activeSessionId]
   )
 
   const handleLogout = useCallback(async () => {

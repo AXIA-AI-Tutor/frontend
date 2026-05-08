@@ -45,19 +45,32 @@ export function HomeScreen({
   onNavigate,
   onToast,
 }: HomeScreenProps) {
-  const [mode, setMode] = useState<SessionMode>('INTERVIEW')
-  const [target, setTarget] = useState<SessionTarget>('BACKEND')
-  const [difficulty, setDifficulty] = useState<SessionDifficulty>('NORMAL')
-  const [sessionId, setSessionId] = useState<number | null>(null)
-  const [sessionOverlayVisible, setSessionOverlayVisible] = useState(true)
-  const [isCreatingSession, setIsCreatingSession] = useState(false)
-  const [isStartingSession, setIsStartingSession] = useState(false)
+  const createdSessionId = usePracticeSessionStore(
+    (state) => state.createdSessionId
+  )
+  const setCreatedSessionId = usePracticeSessionStore(
+    (state) => state.setCreatedSessionId
+  )
+  const clearCreatedSessionId = usePracticeSessionStore(
+    (state) => state.clearCreatedSessionId
+  )
   const setSessionStart = usePracticeSessionStore(
     (state) => state.setSessionStart
   )
   const hasActiveSession = usePracticeSessionStore(
     (state) => state.sessionStart !== null
   )
+  const [mode, setMode] = useState<SessionMode>('INTERVIEW')
+  const [target, setTarget] = useState<SessionTarget>('BACKEND')
+  const [difficulty, setDifficulty] = useState<SessionDifficulty>('NORMAL')
+  const [sessionId, setSessionId] = useState<number | null>(
+    () => createdSessionId
+  )
+  const [sessionOverlayVisible, setSessionOverlayVisible] = useState(
+    () => createdSessionId === null
+  )
+  const [isCreatingSession, setIsCreatingSession] = useState(false)
+  const [isStartingSession, setIsStartingSession] = useState(false)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -94,6 +107,7 @@ export function HomeScreen({
       const session = await createSession()
 
       setSessionId(session.id)
+      setCreatedSessionId(session.id)
       setSessionOverlayVisible(false)
       // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
       // eslint-disable-next-line no-console
@@ -192,6 +206,7 @@ export function HomeScreen({
       const response = await startSession(sessionId, payload)
 
       setSessionStart(response)
+      clearCreatedSessionId()
       // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
       // eslint-disable-next-line no-console
       console.log('[KAN-66] PATCH /api/sessions/{sessionId}/start response', {

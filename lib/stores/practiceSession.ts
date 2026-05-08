@@ -8,9 +8,12 @@ import type {
 } from '@/types/session'
 
 interface PracticeSessionState {
+  createdSessionId: number | null
   sessionStart: SessionStartResponse | null
   questionByTurn: Record<number, AiQuestionGenerateResponse>
   maxQuestionCount: number
+  setCreatedSessionId: (id: number) => void
+  clearCreatedSessionId: () => void
   setSessionStart: (sessionStart: SessionStartResponse) => void
   setTurnQuestion: (
     turn: number,
@@ -21,9 +24,12 @@ interface PracticeSessionState {
 }
 
 export const usePracticeSessionStore = create<PracticeSessionState>((set) => ({
+  createdSessionId: null,
   sessionStart: null,
   questionByTurn: {},
   maxQuestionCount: 0,
+  setCreatedSessionId: (id) => set({ createdSessionId: id }),
+  clearCreatedSessionId: () => set({ createdSessionId: null }),
   setSessionStart: (sessionStart) => set({ sessionStart }),
   setTurnQuestion: (turn, question, maxCount) =>
     set((state) => ({
