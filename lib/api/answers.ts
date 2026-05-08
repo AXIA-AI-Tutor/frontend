@@ -1,5 +1,9 @@
 import { apiClient, type ApiResponse } from './client'
-import type { AnswerWithFeedbackResponse } from '@/types/feedback'
+import type { AnswerResponse } from '@/types/answer'
+import type {
+  AnswerWithFeedbackResponse,
+  FeedbackResponse,
+} from '@/types/feedback'
 
 export interface SubmitAnswerWithFeedbackPayload {
   questionText: string
@@ -32,6 +36,34 @@ function appendOptionalString(
   }
 
   formData.append(name, value)
+}
+
+export async function getSessionAnswers(
+  sessionId: number
+): Promise<AnswerResponse[]> {
+  const response = await apiClient.get<ApiResponse<AnswerResponse[]>>(
+    `/api/sessions/${sessionId}/answers`
+  )
+
+  return response.data.data
+}
+
+export async function getAnswer(answerId: number): Promise<AnswerResponse> {
+  const response = await apiClient.get<ApiResponse<AnswerResponse>>(
+    `/api/answers/${answerId}`
+  )
+
+  return response.data.data
+}
+
+export async function getAnswerFeedbacks(
+  answerId: number
+): Promise<FeedbackResponse[]> {
+  const response = await apiClient.get<ApiResponse<FeedbackResponse[]>>(
+    `/api/answers/${answerId}/feedbacks`
+  )
+
+  return response.data.data
 }
 
 export async function submitAnswerWithFeedback(
