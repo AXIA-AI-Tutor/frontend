@@ -8,7 +8,6 @@ import {
   LogOut,
   UploadCloud,
 } from 'lucide-react'
-import { ModeSegment } from '@/components/home/ModeSegment'
 import { UploadGrid } from '@/components/home/UploadGrid'
 import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
@@ -62,25 +61,23 @@ export function HomeScreen({
   const profileName = isAuthenticated
     ? user?.nickname || user?.email || '사용자'
     : 'Guest'
-  const profileInitial = profileName.slice(0, 1).toUpperCase()
-
-  const handleModeChange = (m: SessionMode) => {
-    setMode(m)
-    onToast(`${SESSION_MODE_LABELS[m]} 모드로 전환되었습니다.`)
-  }
 
   const handleOptionSelect = (
-    key: string,
-    value: SessionDifficulty | SessionTarget
+    key: 'difficulty' | 'target' | 'mode',
+    value: SessionDifficulty | SessionTarget | SessionMode
   ) => {
     if (key === 'difficulty') {
       setDifficulty(value as SessionDifficulty)
-    }
-    if (key === 'target') {
+      onToast(`${value} 선택됨`)
+    } else if (key === 'target') {
       setTarget(value as SessionTarget)
+      onToast(`${value} 선택됨`)
+    } else if (key === 'mode') {
+      setMode(value as SessionMode)
+      onToast(
+        `${SESSION_MODE_LABELS[value as SessionMode]} 모드로 전환되었습니다.`
+      )
     }
-
-    onToast(`${value} 선택됨`)
   }
 
   const handleCreateSession = async () => {
@@ -252,43 +249,31 @@ export function HomeScreen({
                 ✦
               </span>
             </div>
-            {/* 프로필 아이콘 */}
-            <button
-              type="button"
-              onClick={isAuthenticated ? onLogout : undefined}
-              disabled={!isAuthenticated || isLoggingOut}
-              className="relative grid h-11.25 w-11.25 place-items-center overflow-hidden rounded-full bg-white/90 text-blue-700 shadow-lg disabled:cursor-default"
-              aria-label={isAuthenticated ? '로그아웃' : '게스트 프로필'}
-            >
-              <span className="text-base font-black text-blue-700">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                disabled={isLoggingOut}
+                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-4 focus:ring-red-100 disabled:cursor-wait disabled:opacity-60"
+                aria-label="로그아웃"
+              >
                 {isLoggingOut ? (
                   <Loader2 className="animate-spin" size={18} />
-                ) : isAuthenticated ? (
-                  <LogOut size={18} />
                 ) : (
-                  profileInitial
+                  <LogOut size={18} />
                 )}
-              </span>
-              {isAuthenticated ? (
-                <span className="absolute bottom-1 right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
-              ) : null}
-            </button>
+              </button>
+            ) : null}
           </div>
         </div>
 
-        <div className="px-4.5 pt-2">
-          <ModeSegment
-            mode={mode}
-            onChange={handleModeChange}
-            className="mt-0 border-slate-200 bg-white shadow-sm"
-          />
-        </div>
-
         {/* 스크롤 가능한 콘텐츠 */}
-        <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 overflow-auto pb-2">
+        <div className="absolute left-3.5 right-3.5 top-18 bottom-17.5 overflow-auto pb-2">
           {/* 오늘의 연습 */}
           <div className="relative mb-2.5 min-h-27 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 pr-23 shadow-sm">
-            <h3 className="mb-1.5 text-[17px] font-black">오늘의 연습</h3>
+            <h3 className="mb-1.5 text-[17px] font-black">
+              {profileName}님, 오늘도 연습을 시작해볼까요?
+            </h3>
             <p className="text-[12.5px] leading-snug text-slate-600">
               {mode === 'INTERVIEW'
                 ? '지원한 포지션에 맞는 예상 질문으로\n실력을 키워보세요.'
@@ -308,7 +293,7 @@ export function HomeScreen({
 
           {/* 세션 설정 */}
           <div className="relative z-20 mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 shadow-sm">
-            <SessionOptions onSelect={handleOptionSelect} />
+            <SessionOptions mode={mode} onSelect={handleOptionSelect} />
           </div>
 
           {/* 아바타 카드 */}
@@ -341,7 +326,7 @@ export function HomeScreen({
         </div>
 
         {sessionOverlayVisible && (
-          <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 z-30 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
+          <div className="absolute left-3.5 right-3.5 top-18 bottom-17.5 z-30 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
             <button
               type="button"
               onClick={handleCreateSession}
@@ -366,23 +351,16 @@ export function HomeScreen({
         <div className="space-y-4">
           <div className="relative space-y-4">
             <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-6">
-                <div className="max-w-2xl">
-                  <p className="mb-2 text-sm font-bold text-blue-600">
-                    {SESSION_MODE_LABELS[mode]} 모드
-                  </p>
-                  <h2 className="text-3xl font-black tracking-tight text-slate-950">
-                    오늘의 연습을 시작해볼까요?
-                  </h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
-                    자료를 업로드하고 세션 목표를 설정하면 AI 코치가 맞춤 질문을
-                    준비합니다.
-                  </p>
-                </div>
-                <div className="w-56">
-                  <ModeSegment mode={mode} onChange={handleModeChange} />
-                </div>
-              </div>
+              <p className="mb-2 text-sm font-bold text-blue-600">
+                {SESSION_MODE_LABELS[mode]} 모드
+              </p>
+              <h2 className="text-3xl font-black tracking-tight text-slate-950">
+                {profileName}님, 오늘도 연습을 시작해볼까요?
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                자료를 업로드하고 세션 목표를 설정하면 AI 코치가 맞춤 질문을
+                준비합니다.
+              </p>
             </section>
 
             <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -408,7 +386,7 @@ export function HomeScreen({
                       세션 설정
                     </h3>
                   </div>
-                  <SessionOptions onSelect={handleOptionSelect} />
+                  <SessionOptions mode={mode} onSelect={handleOptionSelect} />
                 </section>
               </div>
 
