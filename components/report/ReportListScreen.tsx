@@ -8,6 +8,7 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
+import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
 import type { SessionDifficulty, SessionMode } from '@/types/session'
@@ -62,6 +63,9 @@ export function ReportListScreen({
   onNavigate,
   onToast,
 }: ReportListScreenProps) {
+  const hasActiveSession = usePracticeSessionStore(
+    (state) => state.sessionStart !== null
+  )
   const router = useRouter()
   const [items, setItems] = useState<ReportListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -213,7 +217,11 @@ export function ReportListScreen({
         )}
       </div>
 
-      <BottomNav current="report" onNavigate={onNavigate} />
+      <BottomNav
+        current="report"
+        onNavigate={onNavigate}
+        disabledScreens={hasActiveSession ? [] : ['live']}
+      />
     </>
   )
 }
