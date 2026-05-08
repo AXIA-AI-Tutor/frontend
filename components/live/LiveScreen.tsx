@@ -16,6 +16,7 @@ import { isApiError } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
+import { useVisionMetrics } from '@/lib/hooks/useVisionMetrics'
 import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { getLiveTurn } from '@/components/live/liveTurns'
@@ -49,9 +50,6 @@ function formatLocalDateTime(date: Date) {
   return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 19)
 }
 
-function toScore(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)))
-}
 
 function getQuestionText(question: AiQuestionGenerateResponse | null) {
   return question?.question_text || question?.questionText || null
@@ -69,8 +67,6 @@ export function LiveScreen({
   answerTimeLimitSec = 120,
 }: LiveScreenProps) {
   const [seconds, setSeconds] = useState(0)
-  const [eye, setEye] = useState(86)
-  const [pose, setPose] = useState(8)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
   const [turnNumber, setTurnNumber] = useState(initialTurnNumber)
@@ -94,6 +90,9 @@ export function LiveScreen({
     reset: resetAudioRecorder,
   } = useAudioRecorder()
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
+  const cameraVideoRef = useRef<HTMLVideoElement>(null)
+  const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
+    useVisionMetrics(cameraVideoRef, isRecording)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
   const didReachLimitRef = useRef(false)
@@ -132,8 +131,7 @@ export function LiveScreen({
         const recording = await stopRecording()
         const endedAt = new Date()
         const startedAt = startedAtRef.current ?? endedAt
-        const eyeContactScore = toScore(eye)
-        const postureScore = toScore(100 - pose * 3)
+        const { eyeContactScore, postureScore } = getAverageScores()
 
         // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
         // eslint-disable-next-line no-console
@@ -210,16 +208,17 @@ export function LiveScreen({
         isSubmittingRef.current = false
         startedAtRef.current = null
         resetAudioRecorder()
+        resetSamples()
       }
     },
     [
-      eye,
+      getAverageScores,
       hint,
       isLastTurn,
       onToast,
-      pose,
       question,
       resetAudioRecorder,
+      resetSamples,
       sessionId,
       setTurnFeedback,
       stopRecording,
@@ -238,8 +237,6 @@ export function LiveScreen({
 
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
-      setEye(82 + Math.floor(Math.random() * 8))
-      setPose(4 + Math.floor(Math.random() * 8))
 
       if (
         nextSeconds >= effectiveAnswerTimeLimitSec &&
@@ -355,7 +352,9 @@ export function LiveScreen({
     <CoachAvatarLive {...coachAvatarProps} expanded fill />
   )
 
-  const mobileCamera = <LiveCameraGuide compact={isAnswerLayout} />
+  const mobileCamera = (
+    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerLayout} />
+  )
 
   const desktopControls = (
     <LiveControls
@@ -371,7 +370,12 @@ export function LiveScreen({
   )
 
   const desktopCamera = (
-    <LiveCameraGuide controls={desktopControls} fill compact={isAnswerLayout} />
+    <LiveCameraGuide
+      ref={cameraVideoRef}
+      controls={desktopControls}
+      fill
+      compact={isAnswerLayout}
+    />
   )
 
   const renderTurnFeedbackCard = () => (
@@ -431,8 +435,8 @@ export function LiveScreen({
           <LiveMetrics
             duration={timeStr}
             totalDuration={totalDurationStr}
-            eyeContact={eye}
-            posture={100 - pose * 3}
+            eyeContact={currentEyeContact}
+            posture={currentPosture}
             isRecording={isRecording}
             currentTurn={turnNumber}
             waveformResetSignal={waveformResetSignal}
@@ -473,8 +477,8 @@ export function LiveScreen({
               <LiveMetrics
                 duration={timeStr}
                 totalDuration={totalDurationStr}
-                eyeContact={eye}
-                posture={100 - pose * 3}
+                eyeContact={currentEyeContact}
+                posture={currentPosture}
                 isRecording={isRecording}
                 currentTurn={turnNumber}
                 waveformResetSignal={waveformResetSignal}
