@@ -13,6 +13,7 @@ import {
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
+import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { useVisionMetrics } from '@/lib/hooks/useVisionMetrics'
@@ -180,7 +181,11 @@ export function LiveScreen({
 
         if (isLastTurn) {
           try {
-            if (sessionId) await completeSession(sessionId)
+            if (sessionId) {
+              await completeSession(sessionId)
+              // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
+              void generateSessionReport(sessionId)
+            }
           } catch {
             // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
           }
