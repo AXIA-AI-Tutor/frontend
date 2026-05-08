@@ -38,3 +38,18 @@ export async function nextQuestion(
 export async function completeSession(sessionId: number): Promise<void> {
   await apiClient.patch(`/api/sessions/${sessionId}/complete`)
 }
+
+export async function getMySessions(): Promise<SessionResponse[]> {
+  const response =
+    await apiClient.get<ApiResponse<SessionResponse[]>>('/api/sessions')
+
+  return response.data.data
+}
+
+export async function getSession(sessionId: number): Promise<SessionResponse> {
+  const response = await apiClient.get<ApiResponse<SessionResponse>>(
+    `/api/sessions/${sessionId}`
+  )
+
+  return response.data.data
+}
