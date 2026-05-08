@@ -14,7 +14,6 @@ import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
-import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
@@ -204,13 +203,7 @@ export function PrototypeScreenPage({
         onNavigate={navigate}
       />
     ),
-    report: (
-      <ReportScreen
-        data={MOCK_REPORT_DATA}
-        onNavigate={navigate}
-        onToast={showToast}
-      />
-    ),
+    report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
     reportList: <ReportListScreen onNavigate={navigate} onToast={showToast} />,
   }
 
