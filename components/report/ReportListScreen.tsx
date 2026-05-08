@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
+import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
 import type { Screen } from '@/types'
 import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
@@ -75,17 +76,21 @@ export function ReportListScreen({
 
       try {
         const sessions = await getMySessions()
+        const completed = sessions.filter((s) => s.status === 'COMPLETED')
+
+        const items = await Promise.all(
+          completed.map(async (session): Promise<ReportListItem> => {
+            try {
+              const report = await getSessionReport(session.id)
+              return { session, report, reportStatus: 'READY' }
+            } catch {
+              return { session, report: null, reportStatus: 'MISSING' }
+            }
+          })
+        )
+
         if (!cancelled) {
-          const completed = sessions
-            .filter((s) => s.status === 'COMPLETED')
-            .map(
-              (session): ReportListItem => ({
-                session,
-                report: null,
-                reportStatus: 'MISSING',
-              })
-            )
-          setItems(completed)
+          setItems(items)
         }
       } catch (error) {
         if (!cancelled) {
@@ -126,16 +131,20 @@ export function ReportListScreen({
       {/* 콘텐츠 */}
       <div className="absolute inset-x-3.5 bottom-17.5 top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
         {isLoading ? (
-          <div className="flex h-full items-center justify-center">
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
             <p className="text-sm text-slate-400">불러오는 중...</p>
           </div>
         ) : fetchError ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-slate-400">{fetchError}</p>
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
+            <p className="text-sm text-slate-400 lg:text-base lg:font-bold">
+              {fetchError}
+            </p>
           </div>
         ) : items.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-slate-400">완료된 세션이 없습니다.</p>
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
+            <p className="text-sm text-slate-400 lg:text-base lg:font-bold">
+              완료된 세션이 없습니다.
+            </p>
           </div>
         ) : (
           <ul className="mt-2.5 flex flex-col gap-2">

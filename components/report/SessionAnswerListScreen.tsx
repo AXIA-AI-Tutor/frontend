@@ -7,9 +7,10 @@ import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
+import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
 import type { AnswerResponse } from '@/types/answer'
-import type { ReportAvailabilityStatus } from '@/types/report'
+import type { ReportAvailabilityStatus, ReportResponse } from '@/types/report'
 import type { Screen } from '@/types'
 import type { SessionMode, SessionResponse } from '@/types/session'
 
@@ -66,6 +67,7 @@ export function SessionAnswerListScreen({
   const router = useRouter()
   const [session, setSession] = useState<SessionResponse | null>(null)
   const [answers, setAnswers] = useState<AnswerResponse[]>([])
+  const [report, setReport] = useState<ReportResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
@@ -77,13 +79,15 @@ export function SessionAnswerListScreen({
       setFetchError(null)
 
       try {
-        const [sessionData, answersData] = await Promise.all([
+        const [sessionData, answersData, reportData] = await Promise.all([
           getSession(sessionId),
           getSessionAnswers(sessionId),
+          getSessionReport(sessionId).catch(() => null),
         ])
         if (!cancelled) {
           setSession(sessionData)
           setAnswers(answersData)
+          setReport(reportData)
         }
       } catch (error) {
         if (!cancelled) {
@@ -154,9 +158,10 @@ export function SessionAnswerListScreen({
                 <p className="text-[11px] font-bold text-slate-400">
                   이 세션 종합 점수
                 </p>
-                {/* KAN-69에서 리포트 API 연결 후 실제 점수로 교체 예정 */}
                 <p className="mt-0.5 text-2xl font-black text-blue-600">
-                  {REPORT_STATUS_LABEL['MISSING']}
+                  {report?.totalScore != null
+                    ? `${report.totalScore}점`
+                    : REPORT_STATUS_LABEL['MISSING']}
                 </p>
               </div>
             </div>
