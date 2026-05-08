@@ -13,6 +13,7 @@ import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
 import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
 import { getMockTurn } from '@/lib/mock/live.mock'
+import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
@@ -117,6 +118,9 @@ export function PrototypeScreenPage({
   const authStatus = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
   const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
+  const hasActiveSession = usePracticeSessionStore(
+    (state) => state.sessionStart !== null
+  )
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -253,33 +257,40 @@ export function PrototypeScreenPage({
               </div>
               <nav className="flex flex-col gap-1">
                 {DESKTOP_NAV_ITEMS.map(
-                  ({ icon: Icon, label, description, screen }) => (
-                    <button
-                      key={screen}
-                      type="button"
-                      onClick={() => navigate(screen)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                        current === screen ||
-                          (current === 'reportList' && screen === 'report') ||
-                          (current === 'feedback' &&
-                            feedbackSource === 'report' &&
-                            screen === 'report')
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
-                      )}
-                    >
-                      <Icon size={18} />
-                      <span>
-                        <span className="block text-sm font-black">
-                          {label}
+                  ({ icon: Icon, label, description, screen }) => {
+                    const isDisabled = screen === 'live' && !hasActiveSession
+                    return (
+                      <button
+                        key={screen}
+                        type="button"
+                        onClick={() => navigate(screen)}
+                        disabled={isDisabled}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                          isDisabled
+                            ? 'cursor-not-allowed opacity-40'
+                            : current === screen ||
+                                (current === 'reportList' &&
+                                  screen === 'report') ||
+                                (current === 'feedback' &&
+                                  feedbackSource === 'report' &&
+                                  screen === 'report')
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                        )}
+                      >
+                        <Icon size={18} />
+                        <span>
+                          <span className="block text-sm font-black">
+                            {label}
+                          </span>
+                          <span className="block text-xs text-slate-400">
+                            {description}
+                          </span>
                         </span>
-                        <span className="block text-xs text-slate-400">
-                          {description}
-                        </span>
-                      </span>
-                    </button>
-                  )
+                      </button>
+                    )
+                  }
                 )}
               </nav>
             </aside>
