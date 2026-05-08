@@ -14,6 +14,7 @@ import {
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
+import { completeSession, nextQuestion } from '@/lib/api/sessions'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
@@ -78,6 +79,15 @@ export function LiveScreen({
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready')
   const sessionStart = usePracticeSessionStore((state) => state.sessionStart)
+  const questionByTurn = usePracticeSessionStore(
+    (state) => state.questionByTurn
+  )
+  const maxQuestionCount = usePracticeSessionStore(
+    (state) => state.maxQuestionCount
+  )
+  const setTurnQuestion = usePracticeSessionStore(
+    (state) => state.setTurnQuestion
+  )
   const {
     startRecording,
     stopRecording,
@@ -90,13 +100,18 @@ export function LiveScreen({
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
 
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
+
   const turn = getLiveTurn(turnNumber)
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
   const sessionQuestion =
-    turnNumber === 1 && activeSessionStart ? activeSessionStart.question : null
+    turnNumber === 1 && activeSessionStart
+      ? activeSessionStart.question
+      : (questionByTurn[turnNumber] ?? null)
   const question = getQuestionText(sessionQuestion) || turn.question
   const hint = getQuestionIntent(sessionQuestion) || turn.hint
+  const isLastTurn = maxQuestionCount > 0 && turnNumber === maxQuestionCount
   const effectiveAnswerTimeLimitSec =
     activeSessionStart?.session.answerTimeLimitSec ?? answerTimeLimitSec
   const timeStr = formatDuration(seconds)
@@ -166,6 +181,17 @@ export function LiveScreen({
           response,
         })
         setFeedbackStatus('ready')
+
+        if (isLastTurn) {
+          try {
+            if (sessionId) await completeSession(sessionId)
+          } catch {
+            // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
+          }
+          setShowCompletionModal(true)
+          return
+        }
+
         onToast(`턴 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -189,6 +215,7 @@ export function LiveScreen({
     [
       eye,
       hint,
+      isLastTurn,
       onToast,
       pose,
       question,
@@ -263,15 +290,36 @@ export function LiveScreen({
     onToast('연습이 중지되었습니다.')
   }
 
-  const handleNextTurn = () => {
+  const handleNextTurn = async () => {
     if (isRecording || isSubmittingRef.current) {
       onToast('진행 중인 답변을 먼저 중지해 주세요.')
       return
     }
 
+    if (isLastTurn) {
+      onToast('마지막 턴입니다.')
+      return
+    }
+
+    const nextTurnNumber = turnNumber + 1
+
+    if (sessionId) {
+      try {
+        const res = await nextQuestion(sessionId)
+        setTurnQuestion(nextTurnNumber, res.question, res.maxQuestionCount)
+      } catch (error) {
+        const message =
+          isApiError(error) && error.response?.data.message
+            ? error.response.data.message
+            : '다음 질문을 불러오지 못했습니다.'
+        onToast(message)
+        return
+      }
+    }
+
     secondsRef.current = 0
     didReachLimitRef.current = false
-    setTurnNumber((number) => number + 1)
+    setTurnNumber(nextTurnNumber)
     setSeconds(0)
     setIsRecording(false)
     setIsAnswerLayout(false)
@@ -336,6 +384,31 @@ export function LiveScreen({
 
   return (
     <>
+      {showCompletionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-3xl">
+              🎉
+            </div>
+            <h2 className="text-lg font-black text-slate-950">
+              세션이 완료되었습니다
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              모든 질문에 답변했습니다.
+              <br />
+              리포트에서 종합 피드백을 확인하세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigate('home')}
+              className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
+            >
+              홈으로
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="lg:hidden">
         <LiveHeader onNavigate={onNavigate} />
 

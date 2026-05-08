@@ -1,5 +1,6 @@
 import { apiClient, type ApiResponse } from './client'
 import type {
+  SessionNextQuestionResponse,
   SessionResponse,
   SessionStartRequest,
   SessionStartResponse,
@@ -22,4 +23,18 @@ export async function startSession(
   )
 
   return response.data.data
+}
+
+export async function nextQuestion(
+  sessionId: number
+): Promise<SessionNextQuestionResponse> {
+  const response = await apiClient.post<ApiResponse<SessionNextQuestionResponse>>(
+    `/api/sessions/${sessionId}/questions/next`
+  )
+
+  return response.data.data
+}
+
+export async function completeSession(sessionId: number): Promise<void> {
+  await apiClient.patch(`/api/sessions/${sessionId}/complete`)
 }

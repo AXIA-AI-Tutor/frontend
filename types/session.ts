@@ -69,3 +69,15 @@ export interface SessionStartResponse {
   session: SessionResponse
   question: AiQuestionGenerateResponse
 }
+
+// 백엔드: domain/session/entity/QuestionType.java
+export type QuestionType = 'BASIC' | 'FOLLOW_UP'
+
+// 백엔드: domain/session/dto/SessionNextQuestionResponse.java
+export interface SessionNextQuestionResponse {
+  sessionId: number
+  questionIndex: number    // 2~4 (1번은 start API 담당)
+  maxQuestionCount: number // MVP-2 고정값 4
+  questionType: QuestionType
+  question: AiQuestionGenerateResponse
+}
