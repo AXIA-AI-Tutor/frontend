@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
 import { isApiError } from '@/lib/api/client'
+import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
 import type { Screen } from '@/types'
 import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
@@ -75,17 +76,21 @@ export function ReportListScreen({
 
       try {
         const sessions = await getMySessions()
+        const completed = sessions.filter((s) => s.status === 'COMPLETED')
+
+        const items = await Promise.all(
+          completed.map(async (session): Promise<ReportListItem> => {
+            try {
+              const report = await getSessionReport(session.id)
+              return { session, report, reportStatus: 'READY' }
+            } catch {
+              return { session, report: null, reportStatus: 'MISSING' }
+            }
+          })
+        )
+
         if (!cancelled) {
-          const completed = sessions
-            .filter((s) => s.status === 'COMPLETED')
-            .map(
-              (session): ReportListItem => ({
-                session,
-                report: null,
-                reportStatus: 'MISSING',
-              })
-            )
-          setItems(completed)
+          setItems(items)
         }
       } catch (error) {
         if (!cancelled) {
