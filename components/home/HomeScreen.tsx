@@ -167,14 +167,6 @@ export function HomeScreen({
     }
   }
 
-  const handleDocumentUploadError = (
-    _docType: DocumentType,
-    label: string,
-    _file: File
-  ) => {
-    onToast(`${label} 파일을 다시 선택해 주세요.`)
-  }
-
   const handlePracticeStart = async () => {
     if (!sessionId) {
       onToast('세션을 먼저 생성해 주세요.')
