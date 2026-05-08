@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
-import { isApiError } from '@/lib/api/client'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
 import type { Screen } from '@/types'
@@ -94,10 +94,10 @@ export function ReportListScreen({
         }
       } catch (error) {
         if (!cancelled) {
-          const message =
-            isApiError(error) && error.response?.data.message
-              ? error.response.data.message
-              : '세션 목록을 불러오지 못했습니다.'
+          const message = getApiErrorMessage(
+            error,
+            '세션 목록을 불러오지 못했습니다.'
+          )
           setFetchError(message)
           onToast(message)
         }

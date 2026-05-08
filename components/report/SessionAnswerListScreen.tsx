@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
-import { isApiError } from '@/lib/api/client'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
@@ -91,10 +91,10 @@ export function SessionAnswerListScreen({
         }
       } catch (error) {
         if (!cancelled) {
-          const message =
-            isApiError(error) && error.response?.data.message
-              ? error.response.data.message
-              : '데이터를 불러오지 못했습니다.'
+          const message = getApiErrorMessage(
+            error,
+            '데이터를 불러오지 못했습니다.'
+          )
           setFetchError(message)
         }
       } finally {
