@@ -1,17 +1,20 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
+import { isApiError } from '@/lib/api/client'
+import { getSessionAnswers } from '@/lib/api/answers'
+import { getSession } from '@/lib/api/sessions'
 import type { AnswerResponse } from '@/types/answer'
-import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
+import type { ReportAvailabilityStatus } from '@/types/report'
 import type { Screen } from '@/types'
-import type { SessionMode } from '@/types/session'
+import type { SessionMode, SessionResponse } from '@/types/session'
 
 interface SessionAnswerListScreenProps {
-  item: ReportListItem
-  answers: AnswerResponse[]
+  sessionId: number
 }
 
 const MODE_LABEL: Record<SessionMode, string> = {
@@ -57,21 +60,57 @@ function formatMetric(value: number | null) {
   return value == null ? null : Math.round(value)
 }
 
-function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
-  return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
-}
-
 export function SessionAnswerListScreen({
-  item,
-  answers,
+  sessionId,
 }: SessionAnswerListScreenProps) {
   const router = useRouter()
-  const { session, report } = item
-  const reportStatus = getReportStatus(item)
+  const [session, setSession] = useState<SessionResponse | null>(null)
+  const [answers, setAnswers] = useState<AnswerResponse[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchData() {
+      setIsLoading(true)
+      setFetchError(null)
+
+      try {
+        const [sessionData, answersData] = await Promise.all([
+          getSession(sessionId),
+          getSessionAnswers(sessionId),
+        ])
+        if (!cancelled) {
+          setSession(sessionData)
+          setAnswers(answersData)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message =
+            isApiError(error) && error.response?.data.message
+              ? error.response.data.message
+              : '데이터를 불러오지 못했습니다.'
+          setFetchError(message)
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void fetchData()
+    return () => {
+      cancelled = true
+    }
+  }, [sessionId])
 
   const handleNavigate = (screen: Screen) => {
     router.push(SCREEN_PATHS[screen])
   }
+
+  const headerTitle = session
+    ? `${MODE_LABEL[session.mode]} · ${session.target}`
+    : '세션 상세'
 
   return (
     <>
@@ -85,96 +124,107 @@ export function SessionAnswerListScreen({
         >
           <ChevronLeft size={20} strokeWidth={2.5} />
         </button>
-        <h2 className="text-base font-black text-slate-950">
-          {MODE_LABEL[session.mode]} · {session.target}
-        </h2>
+        <h2 className="text-base font-black text-slate-950">{headerTitle}</h2>
         <div className="h-9 w-9" aria-hidden />
       </header>
 
       {/* 콘텐츠 */}
-      <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
-        {/* 리포트 요약 */}
-        <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm lg:flex lg:items-center lg:gap-3">
-          <button
-            type="button"
-            onClick={() => router.push('/report/list')}
-            className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 lg:grid"
-            aria-label="리포트 목록으로 돌아가기"
-          >
-            <ChevronLeft size={20} strokeWidth={2.5} />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold text-slate-400">
-              이 세션 종합 점수
-            </p>
-            <p className="mt-0.5 text-2xl font-black text-blue-600">
-              {report?.totalScore != null
-                ? `${report.totalScore}점`
-                : REPORT_STATUS_LABEL[reportStatus]}
-            </p>
+      <div className="absolute inset-x-3.5 bottom-17.5 top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-slate-400">불러오는 중...</p>
           </div>
-        </div>
-
-        {/* 턴 목록 */}
-        {answers.length === 0 ? (
-          <div className="flex h-40 items-center justify-center">
-            <p className="text-sm text-slate-400">답변 기록이 없습니다.</p>
+        ) : fetchError ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-slate-400">{fetchError}</p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {answers.map((answer, index) => {
-              const turn = index + 1
-              const duration = formatDuration(answer.durationSec)
-              const eyeContactScore = formatMetric(answer.eyeContactScore)
-              const postureScore = formatMetric(answer.postureScore)
-              return (
-                <li key={answer.answerId}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(`/feedback?turn=${turn}&from=report`)
-                    }
-                    className="w-full rounded-[18px] border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-black text-blue-700">
-                        T{turn}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-black text-slate-950">
-                          {answer.questionText}
-                        </p>
-                        {duration && (
-                          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
-                            <Clock size={10} strokeWidth={2.5} />
-                            {duration}
-                          </p>
-                        )}
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
-                          <span
-                            className={`rounded-full px-2 py-0.5 font-black ${STT_STATUS_COLOR[answer.sttStatus]}`}
-                          >
-                            {STT_STATUS_LABEL[answer.sttStatus]}
+          <>
+            {/* 리포트 요약 */}
+            <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm lg:flex lg:items-center lg:gap-3">
+              <button
+                type="button"
+                onClick={() => router.push('/report/list')}
+                className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 lg:grid"
+                aria-label="리포트 목록으로 돌아가기"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
+              </button>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold text-slate-400">
+                  이 세션 종합 점수
+                </p>
+                {/* KAN-69에서 리포트 API 연결 후 실제 점수로 교체 예정 */}
+                <p className="mt-0.5 text-2xl font-black text-blue-600">
+                  {REPORT_STATUS_LABEL['MISSING']}
+                </p>
+              </div>
+            </div>
+
+            {/* 턴 목록 */}
+            {answers.length === 0 ? (
+              <div className="flex h-40 items-center justify-center">
+                <p className="text-sm text-slate-400">답변 기록이 없습니다.</p>
+              </div>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {answers.map((answer, index) => {
+                  const turn = index + 1
+                  const duration = formatDuration(answer.durationSec)
+                  const eyeContactScore = formatMetric(answer.eyeContactScore)
+                  const postureScore = formatMetric(answer.postureScore)
+                  return (
+                    <li key={answer.answerId}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/feedback?turn=${turn}&answerId=${answer.answerId}&from=report`
+                          )
+                        }
+                        className="w-full rounded-[18px] border border-slate-200 bg-white p-3.5 text-left shadow-sm transition-colors hover:border-blue-200 hover:bg-blue-50/40"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-black text-blue-700">
+                            T{turn}
                           </span>
-                          {eyeContactScore != null && (
-                            <span>시선 {eyeContactScore}점</span>
-                          )}
-                          {postureScore != null && (
-                            <span>자세 {postureScore}점</span>
-                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-black text-slate-950">
+                              {answer.questionText}
+                            </p>
+                            {duration && (
+                              <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                                <Clock size={10} strokeWidth={2.5} />
+                                {duration}
+                              </p>
+                            )}
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+                              <span
+                                className={`rounded-full px-2 py-0.5 font-black ${STT_STATUS_COLOR[answer.sttStatus]}`}
+                              >
+                                {STT_STATUS_LABEL[answer.sttStatus]}
+                              </span>
+                              {eyeContactScore != null && (
+                                <span>시선 {eyeContactScore}점</span>
+                              )}
+                              {postureScore != null && (
+                                <span>자세 {postureScore}점</span>
+                              )}
+                            </div>
+                          </div>
+                          <ChevronRight
+                            size={16}
+                            className="shrink-0 text-slate-300"
+                            strokeWidth={2.5}
+                          />
                         </div>
-                      </div>
-                      <ChevronRight
-                        size={16}
-                        className="shrink-0 text-slate-300"
-                        strokeWidth={2.5}
-                      />
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </>
         )}
       </div>
 
