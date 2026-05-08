@@ -13,7 +13,7 @@ import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { isApiError } from '@/lib/api/client'
+import { getApiErrorMessage, isApiError } from '@/lib/api/client'
 import { uploadSessionDocument } from '@/lib/api/documents'
 import { createSession, startSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
@@ -103,10 +103,7 @@ export function HomeScreen({
       // eslint-disable-next-line no-console
       console.error('[KAN-66] POST /api/sessions failed', error)
 
-      const message =
-        isApiError(error) && error.response?.data.message
-          ? error.response.data.message
-          : '세션을 생성하지 못했습니다.'
+      const message = getApiErrorMessage(error, '세션을 생성하지 못했습니다.')
 
       onToast(message)
     } finally {
@@ -160,12 +157,10 @@ export function HomeScreen({
         error,
       })
 
-      const message =
-        isApiError(error) && error.response?.data.message
-          ? error.response.data.message
-          : error instanceof Error
-            ? error.message
-            : `${label} 업로드에 실패했습니다.`
+      const message = getApiErrorMessage(
+        error,
+        `${label} 업로드에 실패했습니다.`
+      )
 
       onToast(message)
       throw error
@@ -226,10 +221,7 @@ export function HomeScreen({
         error,
       })
 
-      const message =
-        isApiError(error) && error.response?.data.message
-          ? error.response.data.message
-          : '세션을 시작하지 못했습니다.'
+      const message = getApiErrorMessage(error, '세션을 시작하지 못했습니다.')
 
       onToast(message)
     } finally {

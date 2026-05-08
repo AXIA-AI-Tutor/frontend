@@ -11,7 +11,7 @@ import {
   type TurnFeedbackStatus,
 } from '@/components/live/TurnFeedbackCard'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { isApiError } from '@/lib/api/client'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
@@ -198,12 +198,10 @@ export function LiveScreen({
         // eslint-disable-next-line no-console
         console.error('[KAN-66] POST answers/with-feedback failed', error)
 
-        const message =
-          isApiError(error) && error.response?.data.message
-            ? error.response.data.message
-            : error instanceof Error
-              ? error.message
-              : '피드백 생성을 요청하지 못했습니다.'
+        const message = getApiErrorMessage(
+          error,
+          '피드백 생성을 요청하지 못했습니다.'
+        )
 
         setFeedbackStatus('ready')
         onToast(message)
@@ -308,10 +306,10 @@ export function LiveScreen({
         const res = await nextQuestion(sessionId)
         setTurnQuestion(nextTurnNumber, res.question, res.maxQuestionCount)
       } catch (error) {
-        const message =
-          isApiError(error) && error.response?.data.message
-            ? error.response.data.message
-            : '다음 질문을 불러오지 못했습니다.'
+        const message = getApiErrorMessage(
+          error,
+          '다음 질문을 불러오지 못했습니다.'
+        )
         onToast(message)
         return
       }

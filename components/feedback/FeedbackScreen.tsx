@@ -13,7 +13,7 @@ import {
 import { FeedbackBlock } from '@/components/feedback/FeedbackBlock'
 import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { isApiError } from '@/lib/api/client'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { getAnswer, getAnswerFeedbacks } from '@/lib/api/answers'
 import type { Screen } from '@/types'
 import type { SttStatus } from '@/types/answer'
@@ -138,10 +138,10 @@ export function FeedbackScreen({
         setFetchState('done')
       } catch (error) {
         if (cancelled) return
-        const message =
-          isApiError(error) && error.response?.data.message
-            ? error.response.data.message
-            : '피드백 데이터를 불러오지 못했습니다.'
+        const message = getApiErrorMessage(
+          error,
+          '피드백 데이터를 불러오지 못했습니다.'
+        )
         setFetchError(message)
         setFetchState('error')
       }
