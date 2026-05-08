@@ -4,8 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import type { FaceLandmarker } from '@mediapipe/tasks-vision'
 
-const WASM_URL =
-  `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm`
+const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm`
 const MODEL_URL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 const SAMPLE_INTERVAL_MS = 100 // 10fps
@@ -64,9 +63,8 @@ export function useVisionMetrics(
     loadingRef.current = true
 
     try {
-      const { FilesetResolver, FaceLandmarker } = await import(
-        '@mediapipe/tasks-vision'
-      )
+      const { FilesetResolver, FaceLandmarker } =
+        await import('@mediapipe/tasks-vision')
       const vision = await FilesetResolver.forVisionTasks(WASM_URL)
       landmarkerRef.current = await FaceLandmarker.createFromOptions(vision, {
         baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },

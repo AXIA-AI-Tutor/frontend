@@ -205,9 +205,7 @@ export function PrototypeScreenPage({
             ? mapToFeedbackData(turnFeedbackByTurn[turnNumber])
             : getMockFeedbackData(turnNumber)
         }
-        answerStatus={
-          turnFeedbackByTurn[turnNumber]?.response.answer.sttStatus
-        }
+        answerStatus={turnFeedbackByTurn[turnNumber]?.response.answer.sttStatus}
         feedbackSource={feedbackSource}
         onNavigate={navigate}
       />

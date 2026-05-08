@@ -28,9 +28,9 @@ export async function startSession(
 export async function nextQuestion(
   sessionId: number
 ): Promise<SessionNextQuestionResponse> {
-  const response = await apiClient.post<ApiResponse<SessionNextQuestionResponse>>(
-    `/api/sessions/${sessionId}/questions/next`
-  )
+  const response = await apiClient.post<
+    ApiResponse<SessionNextQuestionResponse>
+  >(`/api/sessions/${sessionId}/questions/next`)
 
   return response.data.data
 }

@@ -50,7 +50,6 @@ function formatLocalDateTime(date: Date) {
   return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 19)
 }
 
-
 function getQuestionText(question: AiQuestionGenerateResponse | null) {
   return question?.question_text || question?.questionText || null
 }
