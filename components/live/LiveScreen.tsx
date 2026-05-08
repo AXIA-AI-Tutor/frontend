@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Play, SkipForward, Square, X } from 'lucide-react'
 import { LiveMetrics } from '@/components/live/LiveMetrics'
 import { CoachAvatarLive } from '@/components/live/CoachAvatarLive'
-import { TranscriptCard } from '@/components/live/TranscriptCard'
 import { LiveHeader } from '@/components/live/LiveHeader'
 import { LiveCameraGuide } from '@/components/live/LiveCameraGuide'
 import {
@@ -440,8 +439,6 @@ export function LiveScreen({
             currentTurn={turnNumber}
             waveformResetSignal={waveformResetSignal}
           />
-          <TranscriptCard />
-
           <LiveControls
             isRecording={isRecording}
             showStartGuide={showStartGuide}
@@ -465,7 +462,6 @@ export function LiveScreen({
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
                 {isAnswerLayout ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
-              <TranscriptCard />
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">

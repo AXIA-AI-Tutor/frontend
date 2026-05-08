@@ -2,15 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  BarChart3,
-  Bell,
-  Home,
-  Loader2,
-  LogOut,
-  Mic,
-  Settings,
-} from 'lucide-react'
+import { BarChart3, Home, Loader2, LogOut, Mic } from 'lucide-react'
 
 import { AuthGate } from '@/components/auth/AuthGate'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
@@ -227,10 +219,6 @@ export function PrototypeScreenPage({
   }
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
-  const userDisplayName = isAuthenticated
-    ? user?.nickname || user?.email || '사용자'
-    : '게스트'
-  const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
   const pageTitle = title ?? SCREEN_LABELS[current]
   const content = children ?? screenComponents[current]
 
@@ -246,28 +234,6 @@ export function PrototypeScreenPage({
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="mr-2 hidden text-right xl:block">
-                <strong className="block text-sm font-black text-slate-900">
-                  {userDisplayName}
-                </strong>
-                <span className="block text-xs font-bold text-slate-400">
-                  {authStatusLabel}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-                aria-label="알림"
-              >
-                <Bell size={18} />
-              </button>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-                aria-label="설정"
-              >
-                <Settings size={18} />
-              </button>
               {isAuthenticated ? (
                 <button
                   type="button"
