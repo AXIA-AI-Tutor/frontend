@@ -33,6 +33,8 @@ export interface DocumentUploadUrlResponse {
   requiredHeaders: Record<string, string>
 }
 
+// 백엔드: domain/document/dto/DocumentMetadataResponse.java
+// 세션 문서 업로드 완료 후 확인(GET /api/sessions/:id/documents) 시 반환. uploadUrlExpiresAt 미포함.
 export interface DocumentMetadataResponse {
   documentId: number
   sessionId: number
@@ -50,6 +52,8 @@ export interface DocumentMetadataResponse {
   uploadedAt: string | null
 }
 
+// 백엔드: domain/document/dto/DocumentResponse.java
+// Presigned URL 발급(POST /api/documents/upload-url) 직후 반환. uploadUrlExpiresAt 포함, id/userId 노출.
 export interface DocumentResponse {
   id: number
   userId: number

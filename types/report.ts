@@ -23,28 +23,10 @@ export interface ReportListItem {
   reportStatus?: ReportAvailabilityStatus
 }
 
-// ── 아래는 ReportScreen(대시보드) 전용 프로토타입 타입 ──────────────────────
-
+// ReportScreen 차트용 턴별 포인트 타입
 export interface TurnChartPoint {
   x: number // SVG viewBox 기준 x 퍼센트
   y: number // SVG viewBox 기준 y 퍼센트
   label: string // 턴 레이블 (T1, T2, ...)
   msg: string // 포인트 클릭 메시지
-}
-
-// peerPercentile·previousDeltaScore·averageScore 등은 백엔드 미구현
-export interface ReportSessionSummary {
-  latestSessionDate: string
-  score: number
-  previousDeltaScore: number
-  averageScore: number
-  peerPercentile: number
-}
-
-export interface ReportData {
-  summary: ReportSessionSummary
-  strengths: string[]
-  weaknesses: string[]
-  improvementNote: string
-  turnChartPoints: TurnChartPoint[]
 }
