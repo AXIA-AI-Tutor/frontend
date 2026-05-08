@@ -25,16 +25,24 @@ export interface VisionMetricsResult {
 const FALLBACK_SCORES: VisionScores = { eyeContactScore: 85, postureScore: 85 }
 
 function calcScores(landmarks: { x: number; y: number }[]): VisionScores {
-  // Nose tip: index 4 → centering score (eye contact proxy)
-  const noseX = landmarks[4]?.x ?? 0.5
-  const xOffset = Math.abs(noseX - 0.5)
-  const eyeContactScore = Math.round(Math.max(0, 100 - xOffset * 200))
+  const nose = landmarks[4] ?? { x: 0.5, y: 0.38 }
 
-  // Eye level: outer corners 33 (right) vs 263 (left) → symmetry = posture
+  // X: 좌우 이탈 패널티 — 10% 벗어나면 ~65점, 20% 벗어나면 ~30점
+  const xOffset = Math.abs(nose.x - 0.5)
+
+  // Y: 화면 상단 38% 기준, ±8% 허용 후 패널티 (아래를 보거나 너무 멀리 앉은 경우)
+  const yIdeal = 0.38
+  const yOffset = Math.max(0, Math.abs(nose.y - yIdeal) - 0.08)
+
+  const eyeContactScore = Math.round(
+    Math.max(0, 100 - xOffset * 350 - yOffset * 250)
+  )
+
+  // Posture: 좌우 눈 높이 차 기반 머리 기울기
   const leftEyeY = landmarks[263]?.y ?? 0
   const rightEyeY = landmarks[33]?.y ?? 0
   const eyeLevelDiff = Math.abs(leftEyeY - rightEyeY)
-  const postureScore = Math.round(Math.max(0, 100 - eyeLevelDiff * 500))
+  const postureScore = Math.round(Math.max(0, 100 - eyeLevelDiff * 600))
 
   return { eyeContactScore, postureScore }
 }
