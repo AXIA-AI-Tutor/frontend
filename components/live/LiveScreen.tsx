@@ -12,17 +12,27 @@ import {
   type TurnFeedbackStatus,
 } from '@/components/live/TurnFeedbackCard'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { isApiError } from '@/lib/api/client'
+import { submitAnswerWithFeedback } from '@/lib/api/answers'
+import { completeSession, nextQuestion } from '@/lib/api/sessions'
+import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
+import { useVisionMetrics } from '@/lib/hooks/useVisionMetrics'
+import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
+import type { AiQuestionGenerateResponse } from '@/types/session'
 
 interface LiveNavigationOptions {
   turnNumber?: number
+  sessionId?: number
 }
 
 interface LiveScreenProps {
   onNavigate: (screen: Screen, options?: LiveNavigationOptions) => void
   onToast: (msg: string) => void
   initialTurnNumber: number
+  sessionId?: number
   answerTimeLimitSec?: number // 백엔드: SessionResponse.answerTimeLimitSec
 }
 
@@ -34,15 +44,28 @@ function formatDuration(seconds: number) {
   return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`
 }
 
+function formatLocalDateTime(date: Date) {
+  const timezoneOffsetMs = date.getTimezoneOffset() * 60_000
+
+  return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 19)
+}
+
+function getQuestionText(question: AiQuestionGenerateResponse | null) {
+  return question?.question_text || question?.questionText || null
+}
+
+function getQuestionIntent(question: AiQuestionGenerateResponse | null) {
+  return question?.question_intent || question?.questionIntent || null
+}
+
 export function LiveScreen({
   onNavigate,
   onToast,
   initialTurnNumber,
-  answerTimeLimitSec = 180,
+  sessionId,
+  answerTimeLimitSec = 120,
 }: LiveScreenProps) {
   const [seconds, setSeconds] = useState(0)
-  const [eye, setEye] = useState(86)
-  const [pose, setPose] = useState(8)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
   const [turnNumber, setTurnNumber] = useState(initialTurnNumber)
@@ -50,102 +73,260 @@ export function LiveScreen({
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready')
+  const sessionStart = usePracticeSessionStore((state) => state.sessionStart)
+  const questionByTurn = usePracticeSessionStore(
+    (state) => state.questionByTurn
+  )
+  const maxQuestionCount = usePracticeSessionStore(
+    (state) => state.maxQuestionCount
+  )
+  const setTurnQuestion = usePracticeSessionStore(
+    (state) => state.setTurnQuestion
+  )
+  const {
+    startRecording,
+    stopRecording,
+    reset: resetAudioRecorder,
+  } = useAudioRecorder()
+  const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
+  const cameraVideoRef = useRef<HTMLVideoElement>(null)
+  const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
+    useVisionMetrics(cameraVideoRef, isRecording)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const secondsRef = useRef(0)
   const didReachLimitRef = useRef(false)
+  const startedAtRef = useRef<Date | null>(null)
+  const isSubmittingRef = useRef(false)
 
-  const clearFeedbackTimer = useCallback(() => {
-    if (feedbackTimerRef.current) {
-      clearTimeout(feedbackTimerRef.current)
-      feedbackTimerRef.current = null
-    }
-  }, [])
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
 
-  const requestFeedbackGeneration = useCallback(
-    (completedTurn: number) => {
-      clearFeedbackTimer()
+  const turn = getLiveTurn(turnNumber)
+  const activeSessionStart =
+    sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
+  const sessionQuestion =
+    turnNumber === 1 && activeSessionStart
+      ? activeSessionStart.question
+      : (questionByTurn[turnNumber] ?? null)
+  const question = getQuestionText(sessionQuestion) || turn.question
+  const hint = getQuestionIntent(sessionQuestion) || turn.hint
+  const isLastTurn = maxQuestionCount > 0 && turnNumber === maxQuestionCount
+  const effectiveAnswerTimeLimitSec =
+    activeSessionStart?.session.answerTimeLimitSec ?? answerTimeLimitSec
+  const timeStr = formatDuration(seconds)
+  const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
+  const isSubmittingFeedback = feedbackStatus === 'generating'
+
+  const finishAnswer = useCallback(
+    async (reason: 'manual' | 'timeout') => {
+      if (isSubmittingRef.current) {
+        return
+      }
+
+      isSubmittingRef.current = true
+      setIsRecording(false)
       setFeedbackStatus('generating')
-      feedbackTimerRef.current = setTimeout(() => {
+
+      try {
+        const recording = await stopRecording()
+        const endedAt = new Date()
+        const startedAt = startedAtRef.current ?? endedAt
+        const { eyeContactScore, postureScore } = getAverageScores()
+
+        // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+        // eslint-disable-next-line no-console
+        console.log('[KAN-66] POST answers/with-feedback request', {
+          sessionId,
+          reason,
+          questionText: question,
+          file: {
+            name: recording.file.name,
+            type: recording.file.type,
+            size: recording.file.size,
+          },
+          eyeContactScore,
+          postureScore,
+          startedAt: formatLocalDateTime(startedAt),
+          endedAt: formatLocalDateTime(endedAt),
+        })
+
+        if (!sessionId) {
+          onToast('세션 ID가 없어 피드백을 요청하지 못했습니다.')
+          setFeedbackStatus('ready')
+          return
+        }
+
+        if (recording.size <= 0) {
+          throw new Error('녹음 파일이 비어 있습니다.')
+        }
+
+        const response = await submitAnswerWithFeedback(sessionId, {
+          questionText: question,
+          file: recording.file,
+          eyeContactScore,
+          postureScore,
+          startedAt: formatLocalDateTime(startedAt),
+          endedAt: formatLocalDateTime(endedAt),
+        })
+
+        // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+        // eslint-disable-next-line no-console
+        console.log('[KAN-66] POST answers/with-feedback response', response)
+
+        setTurnFeedback(turnNumber, {
+          questionText: question,
+          questionIntent: hint,
+          response,
+        })
         setFeedbackStatus('ready')
-        onToast(`턴 ${completedTurn} 피드백이 준비되었습니다.`)
-      }, 1600)
+
+        if (isLastTurn) {
+          try {
+            if (sessionId) await completeSession(sessionId)
+          } catch {
+            // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
+          }
+          setShowCompletionModal(true)
+          return
+        }
+
+        onToast(`턴 ${turnNumber} 피드백이 생성되었습니다.`)
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('[KAN-66] POST answers/with-feedback failed', error)
+
+        const message =
+          isApiError(error) && error.response?.data.message
+            ? error.response.data.message
+            : error instanceof Error
+              ? error.message
+              : '피드백 생성을 요청하지 못했습니다.'
+
+        setFeedbackStatus('ready')
+        onToast(message)
+      } finally {
+        isSubmittingRef.current = false
+        startedAtRef.current = null
+        resetAudioRecorder()
+        resetSamples()
+      }
     },
-    [clearFeedbackTimer, onToast]
+    [
+      getAverageScores,
+      hint,
+      isLastTurn,
+      onToast,
+      question,
+      resetAudioRecorder,
+      resetSamples,
+      sessionId,
+      setTurnFeedback,
+      stopRecording,
+      turnNumber,
+    ]
   )
 
   useEffect(() => {
     tickRef.current = setInterval(() => {
       if (!isRecording) return
 
-      const nextSeconds = Math.min(secondsRef.current + 1, answerTimeLimitSec)
+      const nextSeconds = Math.min(
+        secondsRef.current + 1,
+        effectiveAnswerTimeLimitSec
+      )
 
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
-      setEye(82 + Math.floor(Math.random() * 8))
-      setPose(4 + Math.floor(Math.random() * 8))
 
-      if (nextSeconds >= answerTimeLimitSec && !didReachLimitRef.current) {
+      if (
+        nextSeconds >= effectiveAnswerTimeLimitSec &&
+        !didReachLimitRef.current
+      ) {
         didReachLimitRef.current = true
-        setIsRecording(false)
-        requestFeedbackGeneration(turnNumber)
+        void finishAnswer('timeout')
         onToast('제한 시간이 종료되었습니다.')
       }
     }, 1000)
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
     }
-  }, [
-    answerTimeLimitSec,
-    isRecording,
-    onToast,
-    requestFeedbackGeneration,
-    turnNumber,
-  ])
+  }, [effectiveAnswerTimeLimitSec, finishAnswer, isRecording, onToast])
 
   useEffect(() => {
-    return clearFeedbackTimer
-  }, [clearFeedbackTimer])
+    return () => {
+      resetAudioRecorder()
+    }
+  }, [resetAudioRecorder])
 
-  const timeStr = formatDuration(seconds)
-  const totalDurationStr = formatDuration(answerTimeLimitSec)
-  const turn = getLiveTurn(turnNumber)
-  const { question, hint } = turn
+  const handleStart = async () => {
+    if (isSubmittingRef.current) {
+      return
+    }
 
-  const handleStart = () => {
-    secondsRef.current = 0
-    didReachLimitRef.current = false
-    setSeconds(0)
-    setIsRecording(true)
-    setIsAnswerLayout(true)
-    setShowStartGuide(false)
-    clearFeedbackTimer()
-    setFeedbackStatus('in-progress')
-    onToast('연습을 시작합니다.')
+    try {
+      await startRecording()
+      startedAtRef.current = new Date()
+      secondsRef.current = 0
+      didReachLimitRef.current = false
+      setSeconds(0)
+      setIsRecording(true)
+      setIsAnswerLayout(true)
+      setShowStartGuide(false)
+      setFeedbackStatus('in-progress')
+      onToast('연습을 시작합니다.')
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '녹음을 시작하지 못했습니다.'
+
+      onToast(message)
+    }
   }
 
   const handleStop = () => {
-    setIsRecording(false)
-    requestFeedbackGeneration(turnNumber)
+    void finishAnswer('manual')
     onToast('연습이 중지되었습니다.')
   }
 
-  const handleNextTurn = () => {
+  const handleNextTurn = async () => {
+    if (isRecording || isSubmittingRef.current) {
+      onToast('진행 중인 답변을 먼저 중지해 주세요.')
+      return
+    }
+
+    if (isLastTurn) {
+      onToast('마지막 턴입니다.')
+      return
+    }
+
+    const nextTurnNumber = turnNumber + 1
+
+    if (sessionId) {
+      try {
+        const res = await nextQuestion(sessionId)
+        setTurnQuestion(nextTurnNumber, res.question, res.maxQuestionCount)
+      } catch (error) {
+        const message =
+          isApiError(error) && error.response?.data.message
+            ? error.response.data.message
+            : '다음 질문을 불러오지 못했습니다.'
+        onToast(message)
+        return
+      }
+    }
+
     secondsRef.current = 0
     didReachLimitRef.current = false
-    setTurnNumber((number) => number + 1)
+    setTurnNumber(nextTurnNumber)
     setSeconds(0)
     setIsRecording(false)
     setIsAnswerLayout(false)
     setShowStartGuide(false)
-    clearFeedbackTimer()
     setFeedbackStatus('in-progress')
     setWaveformResetSignal((signal) => signal + 1)
     onToast('다음 질문을 준비합니다.')
   }
 
   const handleOpenFeedback = () => {
-    onNavigate('feedback', { turnNumber })
+    onNavigate('feedback', { turnNumber, sessionId })
   }
 
   const coachAvatarProps = {
@@ -170,7 +351,9 @@ export function LiveScreen({
     <CoachAvatarLive {...coachAvatarProps} expanded fill />
   )
 
-  const mobileCamera = <LiveCameraGuide compact={isAnswerLayout} />
+  const mobileCamera = (
+    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerLayout} />
+  )
 
   const desktopControls = (
     <LiveControls
@@ -181,11 +364,17 @@ export function LiveScreen({
       onStart={handleStart}
       onStop={handleStop}
       onNext={handleNextTurn}
+      disabled={isSubmittingFeedback}
     />
   )
 
   const desktopCamera = (
-    <LiveCameraGuide controls={desktopControls} fill compact={isAnswerLayout} />
+    <LiveCameraGuide
+      ref={cameraVideoRef}
+      controls={desktopControls}
+      fill
+      compact={isAnswerLayout}
+    />
   )
 
   const renderTurnFeedbackCard = () => (
@@ -198,6 +387,31 @@ export function LiveScreen({
 
   return (
     <>
+      {showCompletionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-3xl">
+              🎉
+            </div>
+            <h2 className="text-lg font-black text-slate-950">
+              세션이 완료되었습니다
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              모든 질문에 답변했습니다.
+              <br />
+              리포트에서 종합 피드백을 확인하세요.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigate('home')}
+              className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
+            >
+              홈으로
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="lg:hidden">
         <LiveHeader onNavigate={onNavigate} />
 
@@ -220,8 +434,8 @@ export function LiveScreen({
           <LiveMetrics
             duration={timeStr}
             totalDuration={totalDurationStr}
-            eyeContact={eye}
-            posture={100 - pose * 3}
+            eyeContact={currentEyeContact}
+            posture={currentPosture}
             isRecording={isRecording}
             currentTurn={turnNumber}
             waveformResetSignal={waveformResetSignal}
@@ -235,6 +449,7 @@ export function LiveScreen({
             onStart={handleStart}
             onStop={handleStop}
             onNext={handleNextTurn}
+            disabled={isSubmittingFeedback}
           />
         </div>
 
@@ -261,8 +476,8 @@ export function LiveScreen({
               <LiveMetrics
                 duration={timeStr}
                 totalDuration={totalDurationStr}
-                eyeContact={eye}
-                posture={100 - pose * 3}
+                eyeContact={currentEyeContact}
+                posture={currentPosture}
                 isRecording={isRecording}
                 currentTurn={turnNumber}
                 waveformResetSignal={waveformResetSignal}
@@ -283,6 +498,7 @@ interface LiveControlsProps {
   onNext: () => void
   onDismissStartGuide: () => void
   iconOnly?: boolean
+  disabled?: boolean
 }
 
 function LiveControls({
@@ -293,8 +509,13 @@ function LiveControls({
   onNext,
   onDismissStartGuide,
   iconOnly = false,
+  disabled = false,
 }: LiveControlsProps) {
   const handlePrimaryClick = () => {
+    if (disabled) {
+      return
+    }
+
     if (isRecording) {
       onStop()
       return
@@ -309,11 +530,13 @@ function LiveControls({
           <button
             type="button"
             onClick={handlePrimaryClick}
+            disabled={disabled}
             className={[
               'grid h-9 w-9 place-items-center rounded-lg border bg-white shadow-sm transition-colors',
               isRecording
                 ? 'border-red-200 text-red-500 hover:bg-red-50'
                 : 'border-blue-200 text-blue-600 hover:bg-blue-50',
+              disabled ? 'cursor-wait opacity-60' : '',
             ].join(' ')}
             aria-label={isRecording ? '녹음 중지' : '연습 시작'}
             title={isRecording ? '녹음 중지' : '연습 시작'}
@@ -334,7 +557,8 @@ function LiveControls({
         <button
           type="button"
           onClick={onNext}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700"
+          disabled={disabled}
+          className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
           aria-label="다음 질문으로 이동"
           title="다음 질문"
         >
@@ -350,11 +574,13 @@ function LiveControls({
         <button
           type="button"
           onClick={handlePrimaryClick}
+          disabled={disabled}
           className={[
             'inline-flex w-full items-center justify-center gap-1.5 rounded-lg border bg-white py-3 font-black shadow-sm transition-colors',
             isRecording
               ? 'border-red-200 text-red-500 hover:bg-red-50'
               : 'border-blue-200 text-blue-600 hover:bg-blue-50',
+            disabled ? 'cursor-wait opacity-60' : '',
           ].join(' ')}
         >
           {isRecording ? (
@@ -374,7 +600,8 @@ function LiveControls({
       <button
         type="button"
         onClick={onNext}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 py-3 font-black text-white shadow-sm transition-colors hover:bg-blue-700"
+        disabled={disabled}
+        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 py-3 font-black text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
       >
         <SkipForward size={15} />
         다음

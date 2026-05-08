@@ -26,8 +26,15 @@ const SESSION_TARGETS: SessionTarget[] = [
   'QA',
 ]
 
+function isSessionTarget(value: string): value is SessionTarget {
+  return SESSION_TARGETS.includes(value as SessionTarget)
+}
+
 interface SessionOptionsProps {
-  onSelect?: (key: string, value: string) => void
+  onSelect?: (
+    key: 'difficulty' | 'target',
+    value: SessionDifficulty | SessionTarget
+  ) => void
 }
 
 export function SessionOptions({ onSelect }: SessionOptionsProps) {
@@ -40,9 +47,13 @@ export function SessionOptions({ onSelect }: SessionOptionsProps) {
         <Dropdown
           label={DIFFICULTY_LABELS.NORMAL}
           options={Object.values(DIFFICULTY_LABELS)}
-          onSelect={(label) =>
-            onSelect?.('difficulty', LABEL_TO_DIFFICULTY[label] ?? label)
-          }
+          onSelect={(label) => {
+            const difficulty = LABEL_TO_DIFFICULTY[label]
+
+            if (difficulty) {
+              onSelect?.('difficulty', difficulty)
+            }
+          }}
         />
       </div>
       <div className="px-3 py-3">
@@ -52,7 +63,11 @@ export function SessionOptions({ onSelect }: SessionOptionsProps) {
         <Dropdown
           label={SESSION_TARGETS[0]}
           options={SESSION_TARGETS}
-          onSelect={(v) => onSelect?.('target', v)}
+          onSelect={(v) => {
+            if (isSessionTarget(v)) {
+              onSelect?.('target', v)
+            }
+          }}
         />
       </div>
     </div>

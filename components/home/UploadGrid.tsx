@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DocumentType } from '@/types/document'
 
@@ -12,28 +13,40 @@ interface DocumentItem {
 
 const DOCUMENT_ITEMS: DocumentItem[] = [
   { docType: 'RESUME', icon: '📄', label: '이력서' },
-  { docType: 'COVER_LETTER', icon: '✎', label: '자소서' }, // 하드코딩 필요 판단: 백엔드 미구현
+  { docType: 'ETC', icon: '✎', label: '자소서' },
   { docType: 'PORTFOLIO', icon: '💼', label: '포트폴리오' },
   { docType: 'JOB_DESCRIPTION', icon: '📋', label: 'JD' },
 ]
 
 interface UploadGridProps {
-  onUpload?: (docType: DocumentType, label: string) => void
+  onUpload?: (docType: DocumentType, label: string, file: File) => Promise<void>
   onDelete?: (docType: DocumentType, label: string) => void
+  onUploadError?: (docType: DocumentType, label: string, file: File) => void
 }
 
-export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
+export function UploadGrid({
+  onUpload,
+  onDelete,
+  onUploadError,
+}: UploadGridProps) {
   const [files, setFiles] = useState<Partial<Record<DocumentType, File>>>({})
+  const [uploadingDocType, setUploadingDocType] = useState<DocumentType | null>(
+    null
+  )
   const [pendingItem, setPendingItem] = useState<DocumentItem | null>(null)
   const [manageItem, setManageItem] = useState<DocumentItem | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const openFilePicker = (item: DocumentItem) => {
+    if (uploadingDocType) return
+
     setPendingItem(item)
     inputRef.current?.click()
   }
 
   const handleClick = (item: DocumentItem) => {
+    if (uploadingDocType) return
+
     if (files[item.docType]) {
       setManageItem(item)
       return
@@ -42,17 +55,28 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
     openFilePicker(item)
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
-
-    if (file && pendingItem) {
-      setFiles((prev) => ({ ...prev, [pendingItem.docType]: file }))
-      setManageItem(null)
-      onUpload?.(pendingItem.docType, pendingItem.label)
-    }
+    const item = pendingItem
 
     event.target.value = ''
     setPendingItem(null)
+
+    if (file && item) {
+      setUploadingDocType(item.docType)
+
+      try {
+        await onUpload?.(item.docType, item.label, file)
+        setFiles((prev) => ({ ...prev, [item.docType]: file }))
+        setManageItem(null)
+      } catch {
+        onUploadError?.(item.docType, item.label, file)
+      } finally {
+        setUploadingDocType(null)
+      }
+    }
   }
 
   const handleChangeFile = () => {
@@ -79,6 +103,7 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
       <input
         ref={inputRef}
         type="file"
+        accept=".pdf,.txt,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         className="sr-only"
         onChange={handleFileChange}
         aria-hidden="true"
@@ -88,17 +113,22 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
         {DOCUMENT_ITEMS.map((item) => {
           const { docType, icon, label } = item
           const done = Boolean(files[docType])
+          const uploading = uploadingDocType === docType
           return (
             <button
               key={docType}
               type="button"
               onClick={() => handleClick(item)}
+              disabled={Boolean(uploadingDocType)}
               title={files[docType]?.name}
               className={cn(
                 'relative min-h-[88px] rounded-[14px] border bg-white px-1 py-[11px] text-center transition-all duration-200',
                 done
                   ? '-translate-y-0.5 border-indigo-300 shadow-md'
-                  : 'border-slate-200'
+                  : 'border-slate-200',
+                uploadingDocType && !uploading
+                  ? 'cursor-wait opacity-60'
+                  : undefined
               )}
             >
               {/* 완료 체크 */}
@@ -108,7 +138,11 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
                 </span>
               )}
               <div className="mx-auto mb-2 grid h-[31px] w-[31px] place-items-center rounded-[10px] bg-gradient-to-br from-blue-100 to-blue-50 text-[17px] text-indigo-600">
-                {icon}
+                {uploading ? (
+                  <Loader2 className="animate-spin" size={17} />
+                ) : (
+                  icon
+                )}
               </div>
               <b className="block text-[13px]">{label}</b>
               <span
@@ -117,7 +151,7 @@ export function UploadGrid({ onUpload, onDelete }: UploadGridProps) {
                   done ? 'font-black text-emerald-500' : 'text-slate-400'
                 )}
               >
-                {done ? '완료' : '업로드 ⇧'}
+                {uploading ? '업로드 중' : done ? '완료' : '업로드 ⇧'}
               </span>
             </button>
           )

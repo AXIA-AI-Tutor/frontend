@@ -14,14 +14,24 @@ import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { isApiError } from '@/lib/api/client'
+import { uploadSessionDocument } from '@/lib/api/documents'
+import { createSession, startSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
+import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
-import type { SessionMode } from '@/types/session'
+import type { DocumentType } from '@/types/document'
+import type {
+  SessionDifficulty,
+  SessionMode,
+  SessionStartRequest,
+  SessionTarget,
+} from '@/types/session'
 
 interface HomeScreenProps {
   isLoggingOut: boolean
   onLogout: () => void
-  onNavigate: (screen: Screen) => void
+  onNavigate: (screen: Screen, options?: { sessionId?: number }) => void
   onToast: (msg: string) => void
 }
 
@@ -37,7 +47,15 @@ export function HomeScreen({
   onToast,
 }: HomeScreenProps) {
   const [mode, setMode] = useState<SessionMode>('INTERVIEW')
+  const [target, setTarget] = useState<SessionTarget>('BACKEND')
+  const [difficulty, setDifficulty] = useState<SessionDifficulty>('NORMAL')
+  const [sessionId, setSessionId] = useState<number | null>(null)
   const [sessionOverlayVisible, setSessionOverlayVisible] = useState(true)
+  const [isCreatingSession, setIsCreatingSession] = useState(false)
+  const [isStartingSession, setIsStartingSession] = useState(false)
+  const setSessionStart = usePracticeSessionStore(
+    (state) => state.setSessionStart
+  )
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -49,6 +67,177 @@ export function HomeScreen({
   const handleModeChange = (m: SessionMode) => {
     setMode(m)
     onToast(`${SESSION_MODE_LABELS[m]} 모드로 전환되었습니다.`)
+  }
+
+  const handleOptionSelect = (
+    key: string,
+    value: SessionDifficulty | SessionTarget
+  ) => {
+    if (key === 'difficulty') {
+      setDifficulty(value as SessionDifficulty)
+    }
+    if (key === 'target') {
+      setTarget(value as SessionTarget)
+    }
+
+    onToast(`${value} 선택됨`)
+  }
+
+  const handleCreateSession = async () => {
+    if (isCreatingSession) {
+      return
+    }
+
+    setIsCreatingSession(true)
+
+    try {
+      const session = await createSession()
+
+      setSessionId(session.id)
+      setSessionOverlayVisible(false)
+      // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+      // eslint-disable-next-line no-console
+      console.log('[KAN-66] POST /api/sessions response', {
+        sessionId: session.id,
+        session,
+      })
+      onToast(`세션 ${session.id}번이 생성되었습니다.`)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[KAN-66] POST /api/sessions failed', error)
+
+      const message =
+        isApiError(error) && error.response?.data.message
+          ? error.response.data.message
+          : '세션을 생성하지 못했습니다.'
+
+      onToast(message)
+    } finally {
+      setIsCreatingSession(false)
+    }
+  }
+
+  const handleDocumentUpload = async (
+    docType: DocumentType,
+    label: string,
+    file: File
+  ) => {
+    if (!sessionId) {
+      onToast('세션을 먼저 생성해 주세요.')
+      throw new Error('세션 ID가 없습니다.')
+    }
+
+    try {
+      const document = await uploadSessionDocument(sessionId, { docType, file })
+
+      // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+      // eslint-disable-next-line no-console
+      console.log('[KAN-66] document upload completed', {
+        sessionId,
+        docType,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+        document,
+      })
+      onToast(`${label} 업로드 완료`)
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[KAN-66] document upload failed', {
+        sessionId,
+        docType,
+        file: {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+        response:
+          isApiError(error) && error.response
+            ? {
+                status: error.response.status,
+                data: error.response.data,
+              }
+            : null,
+        error,
+      })
+
+      const message =
+        isApiError(error) && error.response?.data.message
+          ? error.response.data.message
+          : error instanceof Error
+            ? error.message
+            : `${label} 업로드에 실패했습니다.`
+
+      onToast(message)
+      throw error
+    }
+  }
+
+  const handleDocumentUploadError = (
+    _docType: DocumentType,
+    label: string,
+    _file: File
+  ) => {
+    onToast(`${label} 파일을 다시 선택해 주세요.`)
+  }
+
+  const handlePracticeStart = async () => {
+    if (!sessionId) {
+      onToast('세션을 먼저 생성해 주세요.')
+      return
+    }
+
+    if (isStartingSession) {
+      return
+    }
+
+    const payload: SessionStartRequest = {
+      mode,
+      target,
+      difficulty,
+    }
+
+    setIsStartingSession(true)
+
+    try {
+      const response = await startSession(sessionId, payload)
+
+      setSessionStart(response)
+      // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
+      // eslint-disable-next-line no-console
+      console.log('[KAN-66] PATCH /api/sessions/{sessionId}/start response', {
+        sessionId,
+        payload,
+        response,
+      })
+      onToast('첫 질문이 생성되었습니다.')
+      onNavigate('live', { sessionId })
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('[KAN-66] PATCH /api/sessions/{sessionId}/start failed', {
+        sessionId,
+        payload,
+        response:
+          isApiError(error) && error.response
+            ? {
+                status: error.response.status,
+                data: error.response.data,
+              }
+            : null,
+        error,
+      })
+
+      const message =
+        isApiError(error) && error.response?.data.message
+          ? error.response.data.message
+          : '세션을 시작하지 못했습니다.'
+
+      onToast(message)
+    } finally {
+      setIsStartingSession(false)
+    }
   }
 
   return (
@@ -112,14 +301,14 @@ export function HomeScreen({
           {/* 자료 업로드 */}
           <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 p-3.5 shadow-sm">
             <UploadGrid
-              onUpload={(label) => onToast(`${label} 업로드 완료`)}
-              onDelete={(label) => onToast(`${label} 삭제 완료`)}
+              onUpload={handleDocumentUpload}
+              onDelete={(_, label) => onToast(`${label} 삭제 완료`)}
             />
           </div>
 
           {/* 세션 설정 */}
           <div className="relative z-20 mb-2.5 rounded-[18px] border border-slate-200 bg-white/92 shadow-sm">
-            <SessionOptions onSelect={(_, val) => onToast(`${val} 선택됨`)} />
+            <SessionOptions onSelect={handleOptionSelect} />
           </div>
 
           {/* 아바타 카드 */}
@@ -138,10 +327,16 @@ export function HomeScreen({
 
           {/* 연습 시작 CTA */}
           <button
-            onClick={() => onNavigate('live')}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
+            onClick={handlePracticeStart}
+            disabled={!sessionId || isStartingSession}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)] disabled:cursor-wait disabled:opacity-75"
           >
-            ▶ 연습 시작
+            {isStartingSession ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              '▶'
+            )}
+            연습 시작
           </button>
         </div>
 
@@ -149,10 +344,17 @@ export function HomeScreen({
           <div className="absolute left-3.5 right-3.5 top-33 bottom-17.5 z-30 flex items-center justify-center bg-white/50 backdrop-blur-[1px]">
             <button
               type="button"
-              onClick={() => setSessionOverlayVisible(false)}
-              className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)]"
+              onClick={handleCreateSession}
+              disabled={isCreatingSession}
+              aria-busy={isCreatingSession}
+              className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)] disabled:cursor-wait disabled:opacity-75"
             >
-              ▶ 세션 시작하기
+              {isCreatingSession ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                '▶'
+              )}
+              세션 시작하기
             </button>
           </div>
         )}
@@ -194,8 +396,8 @@ export function HomeScreen({
                     </h3>
                   </div>
                   <UploadGrid
-                    onUpload={(label) => onToast(`${label} 업로드 완료`)}
-                    onDelete={(label) => onToast(`${label} 삭제 완료`)}
+                    onUpload={handleDocumentUpload}
+                    onDelete={(_, label) => onToast(`${label} 삭제 완료`)}
                   />
                 </section>
 
@@ -206,9 +408,7 @@ export function HomeScreen({
                       세션 설정
                     </h3>
                   </div>
-                  <SessionOptions
-                    onSelect={(_, val) => onToast(`${val} 선택됨`)}
-                  />
+                  <SessionOptions onSelect={handleOptionSelect} />
                 </section>
               </div>
 
@@ -224,8 +424,9 @@ export function HomeScreen({
 
                 <button
                   type="button"
-                  onClick={() => onNavigate('live')}
-                  className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700"
+                  onClick={handlePracticeStart}
+                  disabled={!sessionId || isStartingSession}
+                  className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-75"
                 >
                   <span>
                     <span className="block text-md font-black">연습 시작</span>
@@ -233,7 +434,11 @@ export function HomeScreen({
                       설정한 자료와 목표로 실시간 연습을 시작합니다.
                     </span>
                   </span>
-                  <ArrowRight size={24} />
+                  {isStartingSession ? (
+                    <Loader2 className="animate-spin" size={22} />
+                  ) : (
+                    <ArrowRight size={24} />
+                  )}
                 </button>
               </aside>
             </div>
@@ -242,10 +447,17 @@ export function HomeScreen({
               <div className="absolute inset-0 z-30 flex items-center justify-center rounded-lg bg-white/50 backdrop-blur-[1px]">
                 <button
                   type="button"
-                  onClick={() => setSessionOverlayVisible(false)}
-                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700"
+                  onClick={handleCreateSession}
+                  disabled={isCreatingSession}
+                  aria-busy={isCreatingSession}
+                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-75"
                 >
-                  ▶ 세션 시작하기
+                  {isCreatingSession ? (
+                    <Loader2 className="animate-spin" size={20} />
+                  ) : (
+                    '▶'
+                  )}
+                  세션 시작하기
                 </button>
               </div>
             )}
