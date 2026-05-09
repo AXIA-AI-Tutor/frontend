@@ -22,7 +22,6 @@ import {
   usePracticeSessionStore,
 } from '@/lib/stores/practiceSession'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
-import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
 import type { AiQuestionGenerateResponse } from '@/types/session'
 
@@ -107,15 +106,14 @@ export function LiveScreen({
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
 
-  const turn = getLiveTurn(turnNumber)
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
   const sessionQuestion =
     turnNumber === 1 && activeSessionStart
       ? activeSessionStart.question
       : (questionByTurn[turnNumber] ?? null)
-  const question = getQuestionText(sessionQuestion) || turn.question
-  const hint = getQuestionIntent(sessionQuestion) || turn.hint
+  const question = getQuestionText(sessionQuestion)
+  const hint = getQuestionIntent(sessionQuestion)
   const isLastTurn = maxQuestionCount > 0 && turnNumber === maxQuestionCount
   const effectiveAnswerTimeLimitSec =
     activeSessionStart?.session.answerTimeLimitSec ?? answerTimeLimitSec
@@ -123,7 +121,8 @@ export function LiveScreen({
   const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
   const isSubmittingFeedback = feedbackStatus === 'generating'
   const isCurrentTurnAnswered = feedbackStatus === 'ready'
-  const isPrimaryControlDisabled = isSubmittingFeedback || isCurrentTurnAnswered
+  const isPrimaryControlDisabled =
+    isSubmittingFeedback || isCurrentTurnAnswered || !question
   const isNextControlDisabled =
     isSubmittingFeedback || isRecording || !isCurrentTurnAnswered
 
@@ -166,6 +165,12 @@ export function LiveScreen({
           return
         }
 
+        if (!question) {
+          onToast('질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.')
+          setFeedbackStatus('ready-to-start')
+          return
+        }
+
         if (recording.size <= 0) {
           throw new Error('녹음 파일이 비어 있습니다.')
         }
@@ -184,7 +189,7 @@ export function LiveScreen({
         console.log('[KAN-66] POST answers/with-feedback response', response)
 
         setTurnFeedback(turnNumber, {
-          questionText: question,
+          questionText: question, // null guard above ensures question is string here
           questionIntent: hint,
           response,
         })
@@ -378,8 +383,9 @@ export function LiveScreen({
   }
 
   const coachAvatarProps = {
-    question,
-    hint,
+    question:
+      question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
+    hint: hint ?? '',
   }
 
   const mobileCoachAvatar = (
