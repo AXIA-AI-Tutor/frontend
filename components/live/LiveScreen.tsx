@@ -206,8 +206,6 @@ export function LiveScreen({
           try {
             if (sessionId) {
               await completeSession(sessionId)
-              resetPracticeSession()
-              clearTurnFeedback()
               // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
               void generateSessionReport(sessionId).catch((error) => {
                 // eslint-disable-next-line no-console
@@ -251,9 +249,7 @@ export function LiveScreen({
       question,
       resetAudioRecorder,
       resetSamples,
-      resetPracticeSession,
       sessionId,
-      clearTurnFeedback,
       setTurnFeedback,
       stopRecording,
       turnNumber,
@@ -476,7 +472,11 @@ export function LiveScreen({
             </p>
             <button
               type="button"
-              onClick={() => onNavigate('home')}
+              onClick={() => {
+                resetPracticeSession()
+                clearTurnFeedback()
+                onNavigate('home')
+              }}
               className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
             >
               홈으로
