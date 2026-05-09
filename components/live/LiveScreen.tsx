@@ -10,6 +10,7 @@ import {
   TurnFeedbackCard,
   type TurnFeedbackStatus,
 } from '@/components/live/TurnFeedbackCard'
+import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
@@ -95,12 +96,14 @@ export function LiveScreen({
   } = useAudioRecorder()
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
   const clearTurnFeedback = useTurnFeedbackStore((state) => state.clear)
+  const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
   const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
     useVisionMetrics(cameraVideoRef, isRecording)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
   const didReachLimitRef = useRef(false)
+  const didWarnLongAnswerRef = useRef(false)
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
 
@@ -120,7 +123,12 @@ export function LiveScreen({
   const timeStr = formatDuration(seconds)
   const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
   const isSubmittingFeedback = feedbackStatus === 'generating'
-  const isCurrentTurnAnswered = feedbackStatus === 'ready'
+  // 피드백 후 복귀 시 store에 해당 턴 데이터가 있으면 이미 답변 완료로 간주해 재제출 방지
+  const isCurrentTurnAnswered =
+    feedbackStatus === 'ready' || !!turnFeedbackByTurn[turnNumber]
+  const effectiveFeedbackStatus: TurnFeedbackStatus = isCurrentTurnAnswered
+    ? 'ready'
+    : feedbackStatus
   const isPrimaryControlDisabled =
     isSubmittingFeedback || isCurrentTurnAnswered || !question
   const isNextControlDisabled =
@@ -199,8 +207,6 @@ export function LiveScreen({
           try {
             if (sessionId) {
               await completeSession(sessionId)
-              resetPracticeSession()
-              clearTurnFeedback()
               // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
               void generateSessionReport(sessionId).catch((error) => {
                 // eslint-disable-next-line no-console
@@ -244,9 +250,7 @@ export function LiveScreen({
       question,
       resetAudioRecorder,
       resetSamples,
-      resetPracticeSession,
       sessionId,
-      clearTurnFeedback,
       setTurnFeedback,
       stopRecording,
       turnNumber,
@@ -264,6 +268,16 @@ export function LiveScreen({
 
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
+
+      const warningThreshold = Math.floor(effectiveAnswerTimeLimitSec * 0.75)
+      if (
+        nextSeconds >= warningThreshold &&
+        !didWarnLongAnswerRef.current &&
+        !didReachLimitRef.current
+      ) {
+        didWarnLongAnswerRef.current = true
+        onToast('답변이 길어지고 있어요. 곧 마무리해 주세요.')
+      }
 
       if (
         nextSeconds >= effectiveAnswerTimeLimitSec &&
@@ -300,6 +314,7 @@ export function LiveScreen({
       startedAtRef.current = new Date()
       secondsRef.current = 0
       didReachLimitRef.current = false
+      didWarnLongAnswerRef.current = false
       setSeconds(0)
       setIsRecording(true)
       setIsAnswerLayout(true)
@@ -316,7 +331,7 @@ export function LiveScreen({
 
   const handleStop = () => {
     void finishAnswer('manual')
-    onToast('연습이 중지되었습니다.')
+    onToast('답변이 완료되었습니다.')
   }
 
   const handleNextTurn = async () => {
@@ -379,6 +394,14 @@ export function LiveScreen({
   }
 
   const handleOpenFeedback = () => {
+    // 다음 질문을 백그라운드에서 선호출해 FeedbackScreen 복귀 시 바로 진입 가능하게 한다.
+    if (sessionId && !isLastTurn && !questionByTurn[turnNumber + 1]) {
+      void nextQuestion(sessionId)
+        .then((res) => {
+          setTurnQuestion(res.questionIndex, res.question, res.maxQuestionCount)
+        })
+        .catch(() => {})
+    }
     onNavigate('feedback', { turnNumber, sessionId })
   }
 
@@ -427,14 +450,24 @@ export function LiveScreen({
 
   const renderTurnFeedbackCard = () => (
     <TurnFeedbackCard
-      status={feedbackStatus}
+      status={effectiveFeedbackStatus}
       turnNumber={turnNumber}
       onOpen={handleOpenFeedback}
     />
   )
 
+  const FEEDBACK_LOADING_MESSAGES = [
+    'AI 코치가 답변을 분석하고 있어요...',
+    '음성과 전달력을 살펴보는 중이에요...',
+    '피드백을 작성하고 있어요...',
+    '거의 다 됐어요, 잠시만 기다려 주세요!',
+  ]
+
   return (
     <>
+      {isSubmittingFeedback && (
+        <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">
@@ -451,7 +484,11 @@ export function LiveScreen({
             </p>
             <button
               type="button"
-              onClick={() => onNavigate('home')}
+              onClick={() => {
+                resetPracticeSession()
+                clearTurnFeedback()
+                onNavigate('home')
+              }}
               className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
             >
               홈으로

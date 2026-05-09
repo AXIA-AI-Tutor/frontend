@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   Clock,
   Loader2,
@@ -76,8 +77,18 @@ export function FeedbackScreen({
   const hasActiveSession = usePracticeSessionStore((state) =>
     isPracticeSessionActive(state.sessionStart)
   )
+  const questionByTurn = usePracticeSessionStore(
+    (state) => state.questionByTurn
+  )
   const router = useRouter()
   const isReportSource = feedbackSource === 'report'
+  // 선호출로 store에 저장된 다음 턴 번호 (없으면 null)
+  const nextTurnNumber = !isReportSource
+    ? (Object.keys(questionByTurn)
+        .map(Number)
+        .filter((n) => n > turnNumber)
+        .sort((a, b) => a - b)[0] ?? null)
+    : null
   const shouldFetchFromApi = isReportSource && !!answerId
 
   const [fetchState, setFetchState] = useState<
@@ -169,7 +180,11 @@ export function FeedbackScreen({
       router.push('/report/list')
       return
     }
-    onNavigate('live')
+    if (nextTurnNumber !== null) {
+      onNavigate('live', { turnNumber: nextTurnNumber })
+    } else {
+      onNavigate('live')
+    }
   }
 
   const displayTurn = fetchState === 'done' && apiTurn ? apiTurn : turn
@@ -220,18 +235,30 @@ export function FeedbackScreen({
       <div className="absolute inset-0 overflow-auto bg-[#f8faff] px-4 pb-23 pt-5 text-slate-950 lg:static lg:min-h-[calc(100vh-132px)] lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm">
         <div className="mx-auto max-w-5xl">
           <header className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-              aria-label={
-                isReportSource
-                  ? '이전 리포트 화면으로 돌아가기'
-                  : '실시간 연습으로 돌아가기'
-              }
-            >
-              <ArrowLeft size={18} />
-            </button>
+            {!isReportSource && nextTurnNumber !== null ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-600 px-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-blue-700"
+                aria-label="다음 질문으로 이동"
+              >
+                다음 질문으로
+                <ArrowRight size={15} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+                aria-label={
+                  isReportSource
+                    ? '이전 리포트 화면으로 돌아가기'
+                    : '실시간 연습으로 돌아가기'
+                }
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-black text-blue-600">
                 질문 {turnNumber} 피드백

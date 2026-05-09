@@ -37,9 +37,9 @@ const SCREEN_PATHS: Record<Screen, string> = {
 
 const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
   READY: '집계 완료',
-  MISSING: '리포트 없음',
+  MISSING: '준비 중',
   GENERATING: '집계 중',
-  FAILED: '생성 실패',
+  FAILED: '잠시 후 확인',
 }
 
 const STT_STATUS_LABEL: Record<AnswerResponse['sttStatus'], string> = {

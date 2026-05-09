@@ -40,9 +40,9 @@ const DIFFICULTY_COLOR: Record<SessionDifficulty, string> = {
 
 const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
   READY: '완료',
-  MISSING: '리포트 없음',
+  MISSING: '준비 중',
   GENERATING: '집계 중',
-  FAILED: '생성 실패',
+  FAILED: '잠시 후 확인',
 }
 
 function formatDate(dateStr: string) {
