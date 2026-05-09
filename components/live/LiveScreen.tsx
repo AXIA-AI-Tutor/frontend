@@ -197,7 +197,13 @@ export function LiveScreen({
               resetPracticeSession()
               clearTurnFeedback()
               // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
-              void generateSessionReport(sessionId)
+              void generateSessionReport(sessionId).catch((error) => {
+                // eslint-disable-next-line no-console
+                console.error('[KAN-201] report generation failed', error)
+                onToast(
+                  '리포트 생성이 지연되고 있습니다. 리포트 목록에서 다시 확인해 주세요.'
+                )
+              })
             }
           } catch {
             // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.

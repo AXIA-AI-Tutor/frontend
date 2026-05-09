@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
-import { getApiErrorMessage } from '@/lib/api/client'
+import { getApiErrorMessage, isApiError } from '@/lib/api/client'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
 import {
@@ -62,6 +62,14 @@ function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
   return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
 }
 
+function getReportStatusFromError(error: unknown): ReportAvailabilityStatus {
+  if (isApiError(error) && error.response?.status === 404) {
+    return 'MISSING'
+  }
+
+  return 'FAILED'
+}
+
 export function ReportListScreen({
   onNavigate,
   onToast,
@@ -90,8 +98,12 @@ export function ReportListScreen({
             try {
               const report = await getSessionReport(session.id)
               return { session, report, reportStatus: 'READY' }
-            } catch {
-              return { session, report: null, reportStatus: 'MISSING' }
+            } catch (error) {
+              return {
+                session,
+                report: null,
+                reportStatus: getReportStatusFromError(error),
+              }
             }
           })
         )
