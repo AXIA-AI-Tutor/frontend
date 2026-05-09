@@ -51,7 +51,7 @@ function scoreToY(score: number): number {
 function getReportEmptyMessage(report: ReportResponse | null): string | null {
   if (report) return null
 
-  return '종합 리포트가 아직 생성되지 않았습니다. 질문별 피드백은 리포트 목록에서 확인할 수 있습니다.'
+  return 'AI 코치가 리포트를 준비하고 있어요. 잠시 후 다시 확인해 주세요.'
 }
 
 export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
@@ -232,9 +232,7 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
                 ) : (
                   <div className="grid h-28 w-28 place-items-center rounded-full border-8 border-slate-100 text-center">
                     <span className="text-xs font-black leading-5 text-slate-400">
-                      리포트
-                      <br />
-                      없음
+                      준비 중
                     </span>
                   </div>
                 )}
