@@ -2,7 +2,11 @@ import { CheckCircle2, Clock3, Loader2, MessageSquareText } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-export type TurnFeedbackStatus = 'in-progress' | 'generating' | 'ready'
+export type TurnFeedbackStatus =
+  | 'ready-to-start'
+  | 'in-progress'
+  | 'generating'
+  | 'ready'
 
 interface TurnFeedbackCardProps {
   status: TurnFeedbackStatus
@@ -18,6 +22,11 @@ const STATUS_COPY: Record<
     badge: string
   }
 > = {
+  'ready-to-start': {
+    title: '답변 준비',
+    description: '시작 버튼을 누르면 현재 질문에 대한 답변 녹음을 시작합니다.',
+    badge: '시작 전',
+  },
   'in-progress': {
     title: '피드백 대기 중',
     description: '현재 질문을 마치면 답변 구조와 전달력을 분석합니다.',

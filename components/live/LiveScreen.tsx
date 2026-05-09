@@ -75,7 +75,7 @@ export function LiveScreen({
   const [isAnswerLayout, setIsAnswerLayout] = useState(false)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
-    useState<TurnFeedbackStatus>('ready')
+    useState<TurnFeedbackStatus>('ready-to-start')
   const sessionStart = usePracticeSessionStore((state) => state.sessionStart)
   const questionByTurn = usePracticeSessionStore(
     (state) => state.questionByTurn
@@ -333,7 +333,7 @@ export function LiveScreen({
     setIsRecording(false)
     setIsAnswerLayout(false)
     setShowStartGuide(false)
-    setFeedbackStatus('in-progress')
+    setFeedbackStatus('ready-to-start')
     setWaveformResetSignal((signal) => signal + 1)
     onToast('다음 질문을 준비합니다.')
   }
