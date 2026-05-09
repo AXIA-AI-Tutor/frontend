@@ -10,6 +10,7 @@ import {
   TurnFeedbackCard,
   type TurnFeedbackStatus,
 } from '@/components/live/TurnFeedbackCard'
+import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
@@ -447,8 +448,18 @@ export function LiveScreen({
     />
   )
 
+  const FEEDBACK_LOADING_MESSAGES = [
+    'AI 코치가 답변을 분석하고 있어요...',
+    '음성과 전달력을 살펴보는 중이에요...',
+    '피드백을 작성하고 있어요...',
+    '거의 다 됐어요, 잠시만 기다려 주세요!',
+  ]
+
   return (
     <>
+      {isSubmittingFeedback && (
+        <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl">

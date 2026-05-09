@@ -12,6 +12,7 @@ import { UploadGrid } from '@/components/home/UploadGrid'
 import { SessionOptions } from '@/components/home/SessionOptions'
 import { AvatarCard } from '@/components/home/AvatarCard'
 import { SessionSummary } from '@/components/home/SessionSummary'
+import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage, isApiError } from '@/lib/api/client'
 import { uploadSessionDocument } from '@/lib/api/documents'
@@ -242,8 +243,18 @@ export function HomeScreen({
     }
   }
 
+  const SESSION_START_MESSAGES = [
+    'AI 코치가 질문을 준비하고 있어요...',
+    '세션 정보를 분석하는 중이에요...',
+    '맞춤 질문을 생성하고 있어요...',
+    '거의 다 됐어요, 잠시만 기다려 주세요!',
+  ]
+
   return (
     <>
+      {isStartingSession && (
+        <AILoadingOverlay messages={SESSION_START_MESSAGES} />
+      )}
       <div className="lg:hidden">
         {/* 상단 그라디언트 헤더 */}
         <div className="h-16 bg-[linear-gradient(135deg,#2e96ff_0%,#3d72ff_42%,#7c3aed_100%)] px-4.5 pt-2 text-white">
