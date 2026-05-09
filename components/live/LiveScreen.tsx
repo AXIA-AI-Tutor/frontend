@@ -95,6 +95,7 @@ export function LiveScreen({
   } = useAudioRecorder()
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
   const clearTurnFeedback = useTurnFeedbackStore((state) => state.clear)
+  const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
   const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
     useVisionMetrics(cameraVideoRef, isRecording)
@@ -120,7 +121,12 @@ export function LiveScreen({
   const timeStr = formatDuration(seconds)
   const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
   const isSubmittingFeedback = feedbackStatus === 'generating'
-  const isCurrentTurnAnswered = feedbackStatus === 'ready'
+  // 피드백 후 복귀 시 store에 해당 턴 데이터가 있으면 이미 답변 완료로 간주해 재제출 방지
+  const isCurrentTurnAnswered =
+    feedbackStatus === 'ready' || !!turnFeedbackByTurn[turnNumber]
+  const effectiveFeedbackStatus: TurnFeedbackStatus = isCurrentTurnAnswered
+    ? 'ready'
+    : feedbackStatus
   const isPrimaryControlDisabled =
     isSubmittingFeedback || isCurrentTurnAnswered || !question
   const isNextControlDisabled =
@@ -379,6 +385,14 @@ export function LiveScreen({
   }
 
   const handleOpenFeedback = () => {
+    // 다음 질문을 백그라운드에서 선호출해 FeedbackScreen 복귀 시 바로 진입 가능하게 한다.
+    if (sessionId && !isLastTurn && !questionByTurn[turnNumber + 1]) {
+      void nextQuestion(sessionId)
+        .then((res) => {
+          setTurnQuestion(res.questionIndex, res.question, res.maxQuestionCount)
+        })
+        .catch(() => {})
+    }
     onNavigate('feedback', { turnNumber, sessionId })
   }
 
@@ -427,7 +441,7 @@ export function LiveScreen({
 
   const renderTurnFeedbackCard = () => (
     <TurnFeedbackCard
-      status={feedbackStatus}
+      status={effectiveFeedbackStatus}
       turnNumber={turnNumber}
       onOpen={handleOpenFeedback}
     />
