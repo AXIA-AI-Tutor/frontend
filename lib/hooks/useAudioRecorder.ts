@@ -103,10 +103,10 @@ export function useAudioRecorder() {
           autoGainControl: true,
         },
       })
-      const recorder = new MediaRecorder(
-        stream,
-        mimeType ? { mimeType } : undefined
-      )
+      const recorder = new MediaRecorder(stream, {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 32_000, // 32kbps — 음성 STT에 충분, 2분 기준 ~480KB
+      })
 
       chunksRef.current = []
       streamRef.current = stream

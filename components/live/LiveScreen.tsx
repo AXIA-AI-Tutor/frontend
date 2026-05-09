@@ -103,6 +103,7 @@ export function LiveScreen({
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const secondsRef = useRef(0)
   const didReachLimitRef = useRef(false)
+  const didWarnLongAnswerRef = useRef(false)
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
 
@@ -268,6 +269,16 @@ export function LiveScreen({
       secondsRef.current = nextSeconds
       setSeconds(nextSeconds)
 
+      const warningThreshold = Math.floor(effectiveAnswerTimeLimitSec * 0.75)
+      if (
+        nextSeconds >= warningThreshold &&
+        !didWarnLongAnswerRef.current &&
+        !didReachLimitRef.current
+      ) {
+        didWarnLongAnswerRef.current = true
+        onToast('답변이 길어지고 있어요. 곧 마무리해 주세요.')
+      }
+
       if (
         nextSeconds >= effectiveAnswerTimeLimitSec &&
         !didReachLimitRef.current
@@ -303,6 +314,7 @@ export function LiveScreen({
       startedAtRef.current = new Date()
       secondsRef.current = 0
       didReachLimitRef.current = false
+      didWarnLongAnswerRef.current = false
       setSeconds(0)
       setIsRecording(true)
       setIsAnswerLayout(true)
