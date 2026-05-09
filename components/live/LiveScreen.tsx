@@ -316,7 +316,7 @@ export function LiveScreen({
 
   const handleStop = () => {
     void finishAnswer('manual')
-    onToast('연습이 중지되었습니다.')
+    onToast('답변이 완료되었습니다.')
   }
 
   const handleNextTurn = async () => {
