@@ -324,12 +324,22 @@ export function LiveScreen({
       return
     }
 
-    const nextTurnNumber = turnNumber + 1
+    let nextQuestionIndex: number
 
     if (sessionId) {
       try {
         const res = await nextQuestion(sessionId)
-        setTurnQuestion(nextTurnNumber, res.question, res.maxQuestionCount)
+        nextQuestionIndex = res.questionIndex
+
+        if (
+          nextQuestionIndex <= turnNumber ||
+          nextQuestionIndex > res.maxQuestionCount
+        ) {
+          onToast('다음 질문 정보를 확인하지 못했습니다.')
+          return
+        }
+
+        setTurnQuestion(nextQuestionIndex, res.question, res.maxQuestionCount)
       } catch (error) {
         const message = getApiErrorMessage(
           error,
@@ -338,11 +348,16 @@ export function LiveScreen({
         onToast(message)
         return
       }
+    } else {
+      onToast(
+        '현재 연습 정보를 확인하지 못했습니다. 홈에서 다시 시작해 주세요.'
+      )
+      return
     }
 
     secondsRef.current = 0
     didReachLimitRef.current = false
-    setTurnNumber(nextTurnNumber)
+    setTurnNumber(nextQuestionIndex)
     setSeconds(0)
     setIsRecording(false)
     setIsAnswerLayout(false)
