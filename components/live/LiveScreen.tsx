@@ -122,6 +122,10 @@ export function LiveScreen({
   const timeStr = formatDuration(seconds)
   const totalDurationStr = formatDuration(effectiveAnswerTimeLimitSec)
   const isSubmittingFeedback = feedbackStatus === 'generating'
+  const isCurrentTurnAnswered = feedbackStatus === 'ready'
+  const isPrimaryControlDisabled = isSubmittingFeedback || isCurrentTurnAnswered
+  const isNextControlDisabled =
+    isSubmittingFeedback || isRecording || !isCurrentTurnAnswered
 
   const finishAnswer = useCallback(
     async (reason: 'manual' | 'timeout') => {
@@ -158,7 +162,7 @@ export function LiveScreen({
 
         if (!sessionId) {
           onToast('세션 ID가 없어 피드백을 요청하지 못했습니다.')
-          setFeedbackStatus('ready')
+          setFeedbackStatus('ready-to-start')
           return
         }
 
@@ -202,7 +206,7 @@ export function LiveScreen({
           return
         }
 
-        onToast(`턴 ${turnNumber} 피드백이 생성되었습니다.`)
+        onToast(`질문 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('[KAN-66] POST answers/with-feedback failed', error)
@@ -212,7 +216,7 @@ export function LiveScreen({
           '피드백 생성을 요청하지 못했습니다.'
         )
 
-        setFeedbackStatus('ready')
+        setFeedbackStatus('ready-to-start')
         onToast(message)
       } finally {
         isSubmittingRef.current = false
@@ -275,6 +279,11 @@ export function LiveScreen({
       return
     }
 
+    if (isCurrentTurnAnswered) {
+      onToast('이미 제출한 답변입니다. 다음 질문으로 넘어가 주세요.')
+      return
+    }
+
     try {
       await startRecording()
       startedAtRef.current = new Date()
@@ -301,12 +310,17 @@ export function LiveScreen({
 
   const handleNextTurn = async () => {
     if (isRecording || isSubmittingRef.current) {
-      onToast('진행 중인 답변을 먼저 중지해 주세요.')
+      onToast('진행 중인 답변을 먼저 완료해 주세요.')
+      return
+    }
+
+    if (!isCurrentTurnAnswered) {
+      onToast('현재 질문의 답변을 먼저 완료해 주세요.')
       return
     }
 
     if (isLastTurn) {
-      onToast('마지막 턴입니다.')
+      onToast('마지막 질문입니다.')
       return
     }
 
@@ -345,7 +359,6 @@ export function LiveScreen({
   const coachAvatarProps = {
     question,
     hint,
-    onHintApply: () => onToast('힌트가 현재 답변 목표에 적용되었습니다.'),
   }
 
   const mobileCoachAvatar = (
@@ -368,26 +381,21 @@ export function LiveScreen({
     <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerLayout} />
   )
 
-  const desktopControls = (
+  const desktopPracticeControls = (
     <LiveControls
-      iconOnly
       isRecording={isRecording}
       showStartGuide={showStartGuide}
       onDismissStartGuide={() => setShowStartGuide(false)}
       onStart={handleStart}
       onStop={handleStop}
       onNext={handleNextTurn}
-      disabled={isSubmittingFeedback}
+      primaryDisabled={isPrimaryControlDisabled}
+      nextDisabled={isNextControlDisabled}
     />
   )
 
   const desktopCamera = (
-    <LiveCameraGuide
-      ref={cameraVideoRef}
-      controls={desktopControls}
-      fill
-      compact={isAnswerLayout}
-    />
+    <LiveCameraGuide ref={cameraVideoRef} fill compact={isAnswerLayout} />
   )
 
   const renderTurnFeedbackCard = () => (
@@ -460,7 +468,8 @@ export function LiveScreen({
             onStart={handleStart}
             onStop={handleStop}
             onNext={handleNextTurn}
-            disabled={isSubmittingFeedback}
+            primaryDisabled={isPrimaryControlDisabled}
+            nextDisabled={isNextControlDisabled}
           />
         </div>
 
@@ -482,12 +491,14 @@ export function LiveScreen({
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
                 {isAnswerLayout ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
+              {!isAnswerLayout ? desktopPracticeControls : null}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">
               <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
                 {isAnswerLayout ? desktopCamera : desktopSideCoachAvatar}
               </div>
+              {isAnswerLayout ? desktopPracticeControls : null}
               {renderTurnFeedbackCard()}
               <LiveMetrics
                 duration={timeStr}
@@ -515,6 +526,8 @@ interface LiveControlsProps {
   onDismissStartGuide: () => void
   iconOnly?: boolean
   disabled?: boolean
+  primaryDisabled?: boolean
+  nextDisabled?: boolean
 }
 
 function LiveControls({
@@ -526,9 +539,14 @@ function LiveControls({
   onDismissStartGuide,
   iconOnly = false,
   disabled = false,
+  primaryDisabled = false,
+  nextDisabled = false,
 }: LiveControlsProps) {
+  const isPrimaryDisabled = disabled || primaryDisabled
+  const isNextDisabled = disabled || nextDisabled
+
   const handlePrimaryClick = () => {
-    if (disabled) {
+    if (isPrimaryDisabled) {
       return
     }
 
@@ -546,13 +564,13 @@ function LiveControls({
           <button
             type="button"
             onClick={handlePrimaryClick}
-            disabled={disabled}
+            disabled={isPrimaryDisabled}
             className={[
               'grid h-9 w-9 place-items-center rounded-lg border bg-white shadow-sm transition-colors',
               isRecording
                 ? 'border-red-200 text-red-500 hover:bg-red-50'
                 : 'border-blue-200 text-blue-600 hover:bg-blue-50',
-              disabled ? 'cursor-wait opacity-60' : '',
+              isPrimaryDisabled ? 'cursor-not-allowed opacity-60' : '',
             ].join(' ')}
             aria-label={isRecording ? '녹음 중지' : '연습 시작'}
             title={isRecording ? '녹음 중지' : '연습 시작'}
@@ -564,7 +582,7 @@ function LiveControls({
             )}
           </button>
           <StartGuideBubble
-            show={showStartGuide && !isRecording}
+            show={showStartGuide && !isRecording && !isPrimaryDisabled}
             onClose={onDismissStartGuide}
             className="right-0 top-[calc(100%+10px)]"
             arrow="top-right"
@@ -573,8 +591,8 @@ function LiveControls({
         <button
           type="button"
           onClick={onNext}
-          disabled={disabled}
-          className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+          disabled={isNextDisabled}
+          className="grid h-9 w-9 place-items-center rounded-lg border border-blue-500 bg-blue-600 text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           aria-label="다음 질문으로 이동"
           title="다음 질문"
         >
@@ -590,13 +608,13 @@ function LiveControls({
         <button
           type="button"
           onClick={handlePrimaryClick}
-          disabled={disabled}
+          disabled={isPrimaryDisabled}
           className={[
             'inline-flex w-full items-center justify-center gap-1.5 rounded-lg border bg-white py-3 font-black shadow-sm transition-colors',
             isRecording
               ? 'border-red-200 text-red-500 hover:bg-red-50'
               : 'border-blue-200 text-blue-600 hover:bg-blue-50',
-            disabled ? 'cursor-wait opacity-60' : '',
+            isPrimaryDisabled ? 'cursor-not-allowed opacity-60' : '',
           ].join(' ')}
         >
           {isRecording ? (
@@ -616,8 +634,8 @@ function LiveControls({
       <button
         type="button"
         onClick={onNext}
-        disabled={disabled}
-        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 py-3 font-black text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+        disabled={isNextDisabled}
+        className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-500 bg-blue-600 py-3 font-black text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <SkipForward size={15} />
         다음

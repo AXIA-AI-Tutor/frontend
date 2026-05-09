@@ -63,7 +63,7 @@ const SCREEN_PATHS: Record<Screen, string> = {
 const SCREEN_LABELS: Record<Screen, string> = {
   home: '홈',
   live: '실시간 연습',
-  feedback: '턴 피드백',
+  feedback: '질문 피드백',
   report: '세션 리포트',
   reportList: '리포트 목록',
 }

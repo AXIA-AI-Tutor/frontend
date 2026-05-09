@@ -1,6 +1,6 @@
 import type { AnswerResponse } from '@/types/answer'
 
-// 백엔드 도메인명: feedback (프론트엔드에서 '턴 피드백'으로 표시)
+// 백엔드 도메인명: feedback (프론트엔드에서 '질문 피드백'으로 표시)
 
 export type FeedbackSource = 'live' | 'report'
 

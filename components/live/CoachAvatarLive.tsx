@@ -3,7 +3,6 @@ import { CoachAvatar } from '@/components/ui/CoachAvatar'
 interface CoachAvatarLiveProps {
   question: string
   hint?: string
-  onHintApply?: () => void
   compact?: boolean
   featured?: boolean
   expanded?: boolean
@@ -14,7 +13,6 @@ interface CoachAvatarLiveProps {
 export function CoachAvatarLive({
   question,
   hint,
-  onHintApply,
   compact = false,
   featured = false,
   expanded = false,
@@ -75,15 +73,6 @@ export function CoachAvatarLive({
               <span className="text-[10px] font-black uppercase text-blue-600">
                 Tip
               </span>
-              {onHintApply ? (
-                <button
-                  type="button"
-                  onClick={onHintApply}
-                  className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600 transition-colors hover:bg-blue-100"
-                >
-                  적용
-                </button>
-              ) : null}
             </div>
             <p className="mt-0.5 break-keep text-[11px] font-bold leading-snug text-slate-500">
               {hint}

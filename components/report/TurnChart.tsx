@@ -13,7 +13,7 @@ export function TurnChart({ points, onPointClick }: TurnChartProps) {
 
   return (
     <div className="h-34.5 lg:h-41.5">
-      <h3 className="text-sm font-black">턴별 점수 변화</h3>
+      <h3 className="text-sm font-black">질문별 점수 변화</h3>
       <div className="relative mt-2 h-21 overflow-hidden border-b border-l border-slate-200 lg:mt-3 lg:h-29.5">
         <svg
           className="absolute inset-0 h-full w-full"

@@ -122,8 +122,8 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
           return {
             x: xPositions[i],
             y: scoreToY(score),
-            label: `T${i + 1}`,
-            msg: `T${i + 1}: ${score}점`,
+            label: `Q${i + 1}`,
+            msg: `Q${i + 1}: ${score}점`,
           }
         })
 
@@ -236,7 +236,7 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
               </div>
             </div>
 
-            {/* 턴별 차트 */}
+            {/* 질문별 차트 */}
             {chartPoints.length > 0 && (
               <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
                 <TurnChart

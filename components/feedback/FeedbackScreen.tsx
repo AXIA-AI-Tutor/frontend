@@ -234,7 +234,7 @@ export function FeedbackScreen({
             </button>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-black text-blue-600">
-                턴 {turnNumber} 피드백
+                질문 {turnNumber} 피드백
               </p>
               <h2 className="truncate text-xl font-black tracking-tight text-slate-950">
                 {displayTurn.topic} 답변 분석

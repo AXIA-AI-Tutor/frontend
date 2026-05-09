@@ -78,14 +78,14 @@ export function TurnFeedbackCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="min-w-0 flex-1 text-sm font-black text-slate-950">
-              턴 {turnNumber} {copy.title}
+              질문 {turnNumber} {copy.title}
             </h3>
             {isReady ? (
               <button
                 type="button"
                 onClick={onOpen}
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-600 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100"
-                aria-label={`턴 ${turnNumber} 피드백 보기`}
+                aria-label={`질문 ${turnNumber} 피드백 보기`}
               >
                 <MessageSquareText size={12} />
                 피드백 보기

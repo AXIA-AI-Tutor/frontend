@@ -118,7 +118,7 @@ export function HomeScreen({
         sessionId: session.id,
         session,
       })
-      onToast(`세션 ${session.id}번이 생성되었습니다.`)
+      onToast('연습 세션이 준비되었습니다.')
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('[KAN-66] POST /api/sessions failed', error)
