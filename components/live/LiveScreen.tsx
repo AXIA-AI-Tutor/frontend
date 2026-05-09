@@ -17,7 +17,10 @@ import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { useVisionMetrics } from '@/lib/hooks/useVisionMetrics'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { getLiveTurn } from '@/components/live/liveTurns'
 import type { Screen } from '@/types'
@@ -83,12 +86,16 @@ export function LiveScreen({
   const setTurnQuestion = usePracticeSessionStore(
     (state) => state.setTurnQuestion
   )
+  const resetPracticeSession = usePracticeSessionStore(
+    (state) => state.resetPracticeSession
+  )
   const {
     startRecording,
     stopRecording,
     reset: resetAudioRecorder,
   } = useAudioRecorder()
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
+  const clearTurnFeedback = useTurnFeedbackStore((state) => state.clear)
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
   const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
     useVisionMetrics(cameraVideoRef, isRecording)
@@ -183,6 +190,8 @@ export function LiveScreen({
           try {
             if (sessionId) {
               await completeSession(sessionId)
+              resetPracticeSession()
+              clearTurnFeedback()
               // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
               void generateSessionReport(sessionId)
             }
@@ -220,7 +229,9 @@ export function LiveScreen({
       question,
       resetAudioRecorder,
       resetSamples,
+      resetPracticeSession,
       sessionId,
+      clearTurnFeedback,
       setTurnFeedback,
       stopRecording,
       turnNumber,
@@ -456,7 +467,9 @@ export function LiveScreen({
         <BottomNav
           current="live"
           onNavigate={onNavigate}
-          disabledScreens={sessionStart ? [] : ['live']}
+          disabledScreens={
+            isPracticeSessionActive(sessionStart) ? [] : ['live']
+          }
         />
       </div>
 

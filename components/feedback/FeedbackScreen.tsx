@@ -15,7 +15,10 @@ import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getAnswer, getAnswerFeedbacks } from '@/lib/api/answers'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { SttStatus } from '@/types/answer'
 import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
@@ -70,8 +73,8 @@ export function FeedbackScreen({
   answerStatus = 'COMPLETED',
   onNavigate,
 }: FeedbackScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const router = useRouter()
   const isReportSource = feedbackSource === 'report'

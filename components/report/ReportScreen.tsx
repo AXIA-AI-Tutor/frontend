@@ -10,7 +10,10 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { getAnswerFeedbacks, getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { ReportResponse, TurnChartPoint } from '@/types/report'
 import type { SessionResponse } from '@/types/session'
@@ -46,8 +49,8 @@ function scoreToY(score: number): number {
 }
 
 export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const [fetchState, setFetchState] = useState<
     'loading' | 'empty' | 'done' | 'error'

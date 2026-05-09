@@ -9,7 +9,10 @@ import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { AnswerResponse } from '@/types/answer'
 import type { ReportAvailabilityStatus, ReportResponse } from '@/types/report'
 import type { Screen } from '@/types'
@@ -65,8 +68,8 @@ function formatMetric(value: number | null) {
 export function SessionAnswerListScreen({
   sessionId,
 }: SessionAnswerListScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const router = useRouter()
   const [session, setSession] = useState<SessionResponse | null>(null)
