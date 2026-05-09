@@ -11,8 +11,6 @@ import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportListScreen } from '@/components/report/ReportListScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
-import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
-import { getMockTurn } from '@/lib/mock/live.mock'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -103,6 +101,40 @@ interface NavigationOptions {
   turnNumber?: number
   sessionId?: number
   feedbackSource?: FeedbackSource
+}
+
+const EMPTY_TURN: TurnData = { question: '', hint: '', topic: '' }
+const EMPTY_FEEDBACK_DATA: FeedbackData = {
+  answer: null,
+  summary: null,
+  evidence: null,
+  improvedExample: null,
+  scores: [],
+}
+
+function FeedbackAccessGuard({ onGoHome }: { onGoHome: () => void }) {
+  return (
+    <div className="flex min-h-[812px] items-center justify-center px-4 lg:min-h-[calc(100vh-132px)]">
+      <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-lg bg-orange-50 text-orange-500">
+          <BarChart3 size={22} />
+        </div>
+        <h2 className="text-lg font-black text-slate-950">
+          피드백 정보를 불러오지 못했습니다
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          홈에서 세션을 시작하고 답변을 완료하면 피드백을 확인할 수 있습니다.
+        </p>
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-blue-700"
+        >
+          홈으로 이동
+        </button>
+      </section>
+    </div>
+  )
 }
 
 function LiveAccessGuard({ onGoHome }: { onGoHome: () => void }) {
@@ -229,25 +261,25 @@ export function PrototypeScreenPage({
         onToast={showToast}
       />
     ),
-    feedback: (
-      <FeedbackScreen
-        turnNumber={turnNumber}
-        answerId={answerId}
-        turn={
-          turnFeedbackByTurn[turnNumber]
-            ? mapToTurnData(turnFeedbackByTurn[turnNumber])
-            : getMockTurn(turnNumber)
-        }
-        feedback={
-          turnFeedbackByTurn[turnNumber]
-            ? mapToFeedbackData(turnFeedbackByTurn[turnNumber])
-            : getMockFeedbackData(turnNumber)
-        }
-        answerStatus={turnFeedbackByTurn[turnNumber]?.response.answer.sttStatus}
-        feedbackSource={feedbackSource}
-        onNavigate={navigate}
-      />
-    ),
+    feedback: (() => {
+      const storeEntry = turnFeedbackByTurn[turnNumber]
+      if (feedbackSource === 'live' && !storeEntry) {
+        return <FeedbackAccessGuard onGoHome={() => navigate('home')} />
+      }
+      return (
+        <FeedbackScreen
+          turnNumber={turnNumber}
+          answerId={answerId}
+          turn={storeEntry ? mapToTurnData(storeEntry) : EMPTY_TURN}
+          feedback={
+            storeEntry ? mapToFeedbackData(storeEntry) : EMPTY_FEEDBACK_DATA
+          }
+          answerStatus={storeEntry?.response.answer.sttStatus}
+          feedbackSource={feedbackSource}
+          onNavigate={navigate}
+        />
+      )
+    })(),
     report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
     reportList: <ReportListScreen onNavigate={navigate} onToast={showToast} />,
   }
