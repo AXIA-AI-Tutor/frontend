@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
-import { getApiErrorMessage } from '@/lib/api/client'
+import { getApiErrorMessage, isApiError } from '@/lib/api/client'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
 import type { SessionDifficulty, SessionMode } from '@/types/session'
@@ -59,12 +62,20 @@ function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
   return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
 }
 
+function getReportStatusFromError(error: unknown): ReportAvailabilityStatus {
+  if (isApiError(error) && error.response?.status === 404) {
+    return 'MISSING'
+  }
+
+  return 'FAILED'
+}
+
 export function ReportListScreen({
   onNavigate,
   onToast,
 }: ReportListScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const router = useRouter()
   const [items, setItems] = useState<ReportListItem[]>([])
@@ -87,8 +98,12 @@ export function ReportListScreen({
             try {
               const report = await getSessionReport(session.id)
               return { session, report, reportStatus: 'READY' }
-            } catch {
-              return { session, report: null, reportStatus: 'MISSING' }
+            } catch (error) {
+              return {
+                session,
+                report: null,
+                reportStatus: getReportStatusFromError(error),
+              }
             }
           })
         )

@@ -23,10 +23,10 @@ export interface ReportListItem {
   reportStatus?: ReportAvailabilityStatus
 }
 
-// ReportScreen 차트용 턴별 포인트 타입
+// ReportScreen 차트용 질문별 포인트 타입
 export interface TurnChartPoint {
   x: number // SVG viewBox 기준 x 퍼센트
   y: number // SVG viewBox 기준 y 퍼센트
-  label: string // 턴 레이블 (T1, T2, ...)
+  label: string // 질문 레이블 (Q1, Q2, ...)
   msg: string // 포인트 클릭 메시지
 }

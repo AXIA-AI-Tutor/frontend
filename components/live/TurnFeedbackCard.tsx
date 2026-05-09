@@ -2,7 +2,11 @@ import { CheckCircle2, Clock3, Loader2, MessageSquareText } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 
-export type TurnFeedbackStatus = 'in-progress' | 'generating' | 'ready'
+export type TurnFeedbackStatus =
+  | 'ready-to-start'
+  | 'in-progress'
+  | 'generating'
+  | 'ready'
 
 interface TurnFeedbackCardProps {
   status: TurnFeedbackStatus
@@ -18,6 +22,11 @@ const STATUS_COPY: Record<
     badge: string
   }
 > = {
+  'ready-to-start': {
+    title: '답변 준비',
+    description: '시작 버튼을 누르면 현재 질문에 대한 답변 녹음을 시작합니다.',
+    badge: '시작 전',
+  },
   'in-progress': {
     title: '피드백 대기 중',
     description: '현재 질문을 마치면 답변 구조와 전달력을 분석합니다.',
@@ -69,14 +78,14 @@ export function TurnFeedbackCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="min-w-0 flex-1 text-sm font-black text-slate-950">
-              턴 {turnNumber} {copy.title}
+              질문 {turnNumber} {copy.title}
             </h3>
             {isReady ? (
               <button
                 type="button"
                 onClick={onOpen}
                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-600 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100"
-                aria-label={`턴 ${turnNumber} 피드백 보기`}
+                aria-label={`질문 ${turnNumber} 피드백 보기`}
               >
                 <MessageSquareText size={12} />
                 피드백 보기

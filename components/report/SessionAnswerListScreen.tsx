@@ -9,7 +9,10 @@ import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { AnswerResponse } from '@/types/answer'
 import type { ReportAvailabilityStatus, ReportResponse } from '@/types/report'
 import type { Screen } from '@/types'
@@ -65,8 +68,8 @@ function formatMetric(value: number | null) {
 export function SessionAnswerListScreen({
   sessionId,
 }: SessionAnswerListScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const router = useRouter()
   const [session, setSession] = useState<SessionResponse | null>(null)
@@ -170,7 +173,7 @@ export function SessionAnswerListScreen({
               </div>
             </div>
 
-            {/* 턴 목록 */}
+            {/* 질문 목록 */}
             {answers.length === 0 ? (
               <div className="flex h-40 items-center justify-center">
                 <p className="text-sm text-slate-400">답변 기록이 없습니다.</p>
@@ -195,7 +198,7 @@ export function SessionAnswerListScreen({
                       >
                         <div className="flex items-center gap-3">
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-50 text-[11px] font-black text-blue-700">
-                            T{turn}
+                            Q{turn}
                           </span>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-black text-slate-950">

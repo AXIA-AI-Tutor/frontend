@@ -21,6 +21,13 @@ interface PracticeSessionState {
     maxCount: number
   ) => void
   clearSessionStart: () => void
+  resetPracticeSession: () => void
+}
+
+export function isPracticeSessionActive(
+  sessionStart: SessionStartResponse | null
+) {
+  return sessionStart?.session.status === 'IN_PROGRESS'
 }
 
 export const usePracticeSessionStore = create<PracticeSessionState>((set) => ({
@@ -30,7 +37,8 @@ export const usePracticeSessionStore = create<PracticeSessionState>((set) => ({
   maxQuestionCount: 0,
   setCreatedSessionId: (id) => set({ createdSessionId: id }),
   clearCreatedSessionId: () => set({ createdSessionId: null }),
-  setSessionStart: (sessionStart) => set({ sessionStart }),
+  setSessionStart: (sessionStart) =>
+    set({ sessionStart, questionByTurn: {}, maxQuestionCount: 0 }),
   setTurnQuestion: (turn, question, maxCount) =>
     set((state) => ({
       questionByTurn: { ...state.questionByTurn, [turn]: question },
@@ -38,4 +46,11 @@ export const usePracticeSessionStore = create<PracticeSessionState>((set) => ({
     })),
   clearSessionStart: () =>
     set({ sessionStart: null, questionByTurn: {}, maxQuestionCount: 0 }),
+  resetPracticeSession: () =>
+    set({
+      createdSessionId: null,
+      sessionStart: null,
+      questionByTurn: {},
+      maxQuestionCount: 0,
+    }),
 }))

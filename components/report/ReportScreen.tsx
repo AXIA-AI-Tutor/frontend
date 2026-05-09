@@ -10,7 +10,10 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { getAnswerFeedbacks, getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { ReportResponse, TurnChartPoint } from '@/types/report'
 import type { SessionResponse } from '@/types/session'
@@ -45,9 +48,15 @@ function scoreToY(score: number): number {
   return Math.max(5, Math.min(95, 100 - score))
 }
 
+function getReportEmptyMessage(report: ReportResponse | null): string | null {
+  if (report) return null
+
+  return '종합 리포트가 아직 생성되지 않았습니다. 질문별 피드백은 리포트 목록에서 확인할 수 있습니다.'
+}
+
 export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const [fetchState, setFetchState] = useState<
     'loading' | 'empty' | 'done' | 'error'
@@ -60,6 +69,7 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
   const [chartPoints, setChartPoints] = useState<TurnChartPoint[]>([])
   const [strengths, setStrengths] = useState<string[]>([])
   const [weaknesses, setWeaknesses] = useState<string[]>([])
+  const reportEmptyMessage = getReportEmptyMessage(report)
 
   useEffect(() => {
     let cancelled = false
@@ -119,8 +129,8 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
           return {
             x: xPositions[i],
             y: scoreToY(score),
-            label: `T${i + 1}`,
-            msg: `T${i + 1}: ${score}점`,
+            label: `Q${i + 1}`,
+            msg: `Q${i + 1}: ${score}점`,
           }
         })
 
@@ -217,7 +227,17 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
               </div>
 
               <div className="grid grid-cols-[112px_1fr] items-center gap-2.5">
-                <ScoreRing score={report?.totalScore ?? 0} />
+                {report?.totalScore != null ? (
+                  <ScoreRing score={report.totalScore} />
+                ) : (
+                  <div className="grid h-28 w-28 place-items-center rounded-full border-8 border-slate-100 text-center">
+                    <span className="text-xs font-black leading-5 text-slate-400">
+                      리포트
+                      <br />
+                      없음
+                    </span>
+                  </div>
+                )}
                 <div>
                   {averageScore != null && (
                     <div className="mt-2 grid grid-cols-1 gap-1.75">
@@ -231,9 +251,14 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
                   )}
                 </div>
               </div>
+              {reportEmptyMessage && (
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold leading-5 text-slate-500">
+                  {reportEmptyMessage}
+                </p>
+              )}
             </div>
 
-            {/* 턴별 차트 */}
+            {/* 질문별 차트 */}
             {chartPoints.length > 0 && (
               <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
                 <TurnChart

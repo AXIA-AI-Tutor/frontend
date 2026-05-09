@@ -17,7 +17,10 @@ import { getApiErrorMessage, isApiError } from '@/lib/api/client'
 import { uploadSessionDocument } from '@/lib/api/documents'
 import { createSession, startSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
-import { usePracticeSessionStore } from '@/lib/stores/practiceSession'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { DocumentType } from '@/types/document'
 import type {
@@ -57,8 +60,8 @@ export function HomeScreen({
   const setSessionStart = usePracticeSessionStore(
     (state) => state.setSessionStart
   )
-  const hasActiveSession = usePracticeSessionStore(
-    (state) => state.sessionStart !== null
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
   )
   const [mode, setMode] = useState<SessionMode>('INTERVIEW')
   const [target, setTarget] = useState<SessionTarget>('BACKEND')
@@ -115,7 +118,7 @@ export function HomeScreen({
         sessionId: session.id,
         session,
       })
-      onToast(`세션 ${session.id}번이 생성되었습니다.`)
+      onToast('연습 세션이 준비되었습니다.')
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error('[KAN-66] POST /api/sessions failed', error)
