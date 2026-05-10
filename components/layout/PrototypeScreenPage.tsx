@@ -2,15 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  BarChart3,
-  Bell,
-  Home,
-  Loader2,
-  LogOut,
-  Mic,
-  Settings,
-} from 'lucide-react'
+import { BarChart3, Home, Loader2, LogOut, Mic } from 'lucide-react'
 
 import { AuthGate } from '@/components/auth/AuthGate'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
@@ -19,14 +11,46 @@ import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportListScreen } from '@/components/report/ReportListScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
-import { getMockFeedbackData } from '@/lib/mock/feedback.mock'
-import { getMockTurn } from '@/lib/mock/live.mock'
-import { MOCK_REPORT_DATA } from '@/lib/mock/report.mock'
-import { MOCK_REPORT_LIST } from '@/lib/mock/sessions.mock'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
+import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
 import { useAuthStore } from '@/lib/stores/auth'
 import { cn } from '@/lib/utils'
 import type { Screen } from '@/types'
-import type { FeedbackSource } from '@/types/feedback'
+import type { FeedbackData, FeedbackSource, TurnData } from '@/types/feedback'
+import type { TurnFeedbackEntry } from '@/lib/stores/turnFeedback'
+
+function mapToTurnData(entry: TurnFeedbackEntry): TurnData {
+  const q = entry.questionText
+  return {
+    question: q,
+    hint: entry.questionIntent ?? '',
+    topic: q.length > 16 ? q.slice(0, 16) + '…' : q,
+  }
+}
+
+function mapToFeedbackData(entry: TurnFeedbackEntry): FeedbackData {
+  const { answer, feedback } = entry.response
+  return {
+    feedbackId: feedback.feedbackId,
+    answerId: feedback.answerId,
+    createdAt: feedback.createdAt,
+    answer: answer.transcript,
+    summary: feedback.summary,
+    evidence: feedback.evidence,
+    improvedExample: feedback.improvementExample,
+    scores: [
+      { label: '논리성', score: feedback.structureScore },
+      { label: '구체성', score: feedback.specificityScore },
+      { label: '관련성', score: feedback.relevanceScore },
+      { label: '전달력', score: feedback.deliveryScore },
+    ],
+    durationLabel: getAnswerDurationLabel(answer),
+  }
+}
 
 const SCREEN_PATHS: Record<Screen, string> = {
   home: '/',
@@ -39,7 +63,7 @@ const SCREEN_PATHS: Record<Screen, string> = {
 const SCREEN_LABELS: Record<Screen, string> = {
   home: '홈',
   live: '실시간 연습',
-  feedback: '턴 피드백',
+  feedback: '질문 피드백',
   report: '세션 리포트',
   reportList: '리포트 목록',
 }
@@ -68,6 +92,8 @@ const DESKTOP_NAV_ITEMS = [
 interface PrototypeScreenPageProps {
   current: Screen
   turnNumber?: number
+  sessionId?: number
+  answerId?: number
   feedbackSource?: FeedbackSource
   title?: string
   children?: React.ReactNode
@@ -75,12 +101,75 @@ interface PrototypeScreenPageProps {
 
 interface NavigationOptions {
   turnNumber?: number
+  sessionId?: number
   feedbackSource?: FeedbackSource
+}
+
+const EMPTY_TURN: TurnData = { question: '', hint: '', topic: '' }
+const EMPTY_FEEDBACK_DATA: FeedbackData = {
+  answer: null,
+  summary: null,
+  evidence: null,
+  improvedExample: null,
+  scores: [],
+}
+
+function FeedbackAccessGuard({ onGoHome }: { onGoHome: () => void }) {
+  return (
+    <div className="flex min-h-[812px] items-center justify-center px-4 lg:min-h-[calc(100vh-132px)]">
+      <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-lg bg-orange-50 text-orange-500">
+          <BarChart3 size={22} />
+        </div>
+        <h2 className="text-lg font-black text-slate-950">
+          피드백 정보를 불러오지 못했습니다
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          홈에서 세션을 시작하고 답변을 완료하면 피드백을 확인할 수 있습니다.
+        </p>
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-blue-700"
+        >
+          홈으로 이동
+        </button>
+      </section>
+    </div>
+  )
+}
+
+function LiveAccessGuard({ onGoHome }: { onGoHome: () => void }) {
+  return (
+    <div className="flex min-h-[812px] items-center justify-center px-4 lg:min-h-[calc(100vh-132px)]">
+      <section className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-lg bg-blue-50 text-blue-600">
+          <Mic size={22} />
+        </div>
+        <h2 className="text-lg font-black text-slate-950">
+          진행 중인 연습이 없습니다
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          홈에서 세션을 생성하고 연습을 시작하면 실시간 연습 화면으로 이동할 수
+          있습니다.
+        </p>
+        <button
+          type="button"
+          onClick={onGoHome}
+          className="mt-5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-black text-white transition-colors hover:bg-blue-700"
+        >
+          홈으로 이동
+        </button>
+      </section>
+    </div>
+  )
 }
 
 export function PrototypeScreenPage({
   current,
   turnNumber = 1,
+  sessionId,
+  answerId,
   feedbackSource = 'live',
   title,
   children,
@@ -91,6 +180,12 @@ export function PrototypeScreenPage({
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const logout = useAuthStore((state) => state.logout)
+  const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
+  const activePracticeSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart) ? state.sessionStart : null
+  )
+  const hasActiveSession = activePracticeSession !== null
+  const activeSessionId = activePracticeSession?.session.id ?? null
 
   const showToast = useCallback((message: string) => {
     setToast({ show: true, message })
@@ -102,22 +197,32 @@ export function PrototypeScreenPage({
 
   const navigate = useCallback(
     (screen: Screen, options?: NavigationOptions) => {
-      const path = SCREEN_PATHS[screen]
+      const resolvedSessionId =
+        options?.sessionId ?? (screen === 'live' ? activeSessionId : null)
 
-      if (options?.turnNumber) {
-        const params = new URLSearchParams({
-          turn: String(options.turnNumber),
-        })
-        if (options.feedbackSource) {
-          params.set('from', options.feedbackSource)
-        }
-        router.push(`${path}?${params.toString()}`)
+      if (screen === 'live' && !resolvedSessionId) {
+        showToast('세션을 먼저 시작해 주세요.')
         return
       }
 
-      router.push(path)
+      const path = SCREEN_PATHS[screen]
+      const params = new URLSearchParams()
+
+      if (options?.turnNumber) {
+        params.set('turn', String(options.turnNumber))
+      }
+
+      if (resolvedSessionId) {
+        params.set('sessionId', String(resolvedSessionId))
+      }
+
+      if (options?.feedbackSource) {
+        params.set('from', options.feedbackSource)
+      }
+
+      router.push(params.size > 0 ? `${path}?${params.toString()}` : path)
     },
-    [router]
+    [router, activeSessionId, showToast]
   )
 
   const handleLogout = useCallback(async () => {
@@ -151,44 +256,49 @@ export function PrototypeScreenPage({
     ),
     live: (
       <LiveScreen
-        key={`live-${turnNumber}`}
+        key={`live-${turnNumber}-${sessionId ?? 'no-session'}`}
         initialTurnNumber={turnNumber}
+        sessionId={sessionId}
         onNavigate={navigate}
         onToast={showToast}
       />
     ),
-    feedback: (
-      <FeedbackScreen
-        turnNumber={turnNumber}
-        turn={getMockTurn(turnNumber)}
-        feedback={getMockFeedbackData(turnNumber)}
-        feedbackSource={feedbackSource}
-        onNavigate={navigate}
-      />
-    ),
-    report: (
-      <ReportScreen
-        data={MOCK_REPORT_DATA}
-        onNavigate={navigate}
-        onToast={showToast}
-      />
-    ),
-    reportList: (
-      <ReportListScreen
-        items={MOCK_REPORT_LIST}
-        onNavigate={navigate}
-        onToast={showToast}
-      />
-    ),
+    feedback: (() => {
+      const storeEntry = turnFeedbackByTurn[turnNumber]
+      if (feedbackSource === 'live' && !storeEntry) {
+        return <FeedbackAccessGuard onGoHome={() => navigate('home')} />
+      }
+      return (
+        <FeedbackScreen
+          turnNumber={turnNumber}
+          sessionId={sessionId}
+          answerId={answerId}
+          turn={storeEntry ? mapToTurnData(storeEntry) : EMPTY_TURN}
+          feedback={
+            storeEntry ? mapToFeedbackData(storeEntry) : EMPTY_FEEDBACK_DATA
+          }
+          answerStatus={storeEntry?.response.answer.sttStatus}
+          feedbackSource={feedbackSource}
+          onNavigate={navigate}
+          onToast={showToast}
+        />
+      )
+    })(),
+    report: <ReportScreen onNavigate={navigate} onToast={showToast} />,
+    reportList: <ReportListScreen onNavigate={navigate} onToast={showToast} />,
   }
 
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
-  const userDisplayName = isAuthenticated
-    ? user?.nickname || user?.email || '사용자'
-    : '게스트'
-  const authStatusLabel = isAuthenticated ? '로그인됨' : '개발 모드'
+  const isLiveRouteBlocked =
+    current === 'live' && (!activeSessionId || sessionId !== activeSessionId)
   const pageTitle = title ?? SCREEN_LABELS[current]
-  const content = children ?? screenComponents[current]
+  const content =
+    children ??
+    (isLiveRouteBlocked ? (
+      <LiveAccessGuard onGoHome={() => navigate('home')} />
+    ) : (
+      screenComponents[current]
+    ))
 
   return (
     <AuthGate>
@@ -202,28 +312,6 @@ export function PrototypeScreenPage({
               </h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="mr-2 hidden text-right xl:block">
-                <strong className="block text-sm font-black text-slate-900">
-                  {userDisplayName}
-                </strong>
-                <span className="block text-xs font-bold text-slate-400">
-                  {authStatusLabel}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-                aria-label="알림"
-              >
-                <Bell size={18} />
-              </button>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm"
-                aria-label="설정"
-              >
-                <Settings size={18} />
-              </button>
               {isAuthenticated ? (
                 <button
                   type="button"
@@ -254,33 +342,40 @@ export function PrototypeScreenPage({
               </div>
               <nav className="flex flex-col gap-1">
                 {DESKTOP_NAV_ITEMS.map(
-                  ({ icon: Icon, label, description, screen }) => (
-                    <button
-                      key={screen}
-                      type="button"
-                      onClick={() => navigate(screen)}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                        current === screen ||
-                          (current === 'reportList' && screen === 'report') ||
-                          (current === 'feedback' &&
-                            feedbackSource === 'report' &&
-                            screen === 'report')
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
-                      )}
-                    >
-                      <Icon size={18} />
-                      <span>
-                        <span className="block text-sm font-black">
-                          {label}
+                  ({ icon: Icon, label, description, screen }) => {
+                    const isDisabled = screen === 'live' && !hasActiveSession
+                    return (
+                      <button
+                        key={screen}
+                        type="button"
+                        onClick={() => navigate(screen)}
+                        disabled={isDisabled}
+                        className={cn(
+                          'flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
+                          isDisabled
+                            ? 'cursor-not-allowed opacity-40'
+                            : current === screen ||
+                                (current === 'reportList' &&
+                                  screen === 'report') ||
+                                (current === 'feedback' &&
+                                  feedbackSource === 'report' &&
+                                  screen === 'report')
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                        )}
+                      >
+                        <Icon size={18} />
+                        <span>
+                          <span className="block text-sm font-black">
+                            {label}
+                          </span>
+                          <span className="block text-xs text-slate-400">
+                            {description}
+                          </span>
                         </span>
-                        <span className="block text-xs text-slate-400">
-                          {description}
-                        </span>
-                      </span>
-                    </button>
-                  )
+                      </button>
+                    )
+                  }
                 )}
               </nav>
             </aside>

@@ -49,3 +49,31 @@ export interface SessionStartRequest {
   target: SessionTarget
   difficulty: SessionDifficulty
 }
+
+// 백엔드: global/ai/client/dto/AiQuestionGenerateResponse.java
+// @JsonProperty로 snake_case 직렬화 — FE는 snake_case 키를 수신한다.
+export interface AiQuestionGenerateResponse {
+  question_text?: string | null
+  question_intent?: string | null
+  tts_audio_url?: string | null
+  latency_ms?: number | null
+  fallback_components?: string[] | null
+}
+
+// 백엔드: domain/session/dto/SessionStartResponse.java
+export interface SessionStartResponse {
+  session: SessionResponse
+  question: AiQuestionGenerateResponse
+}
+
+// 백엔드: domain/session/entity/QuestionType.java
+export type QuestionType = 'BASIC' | 'FOLLOW_UP'
+
+// 백엔드: domain/session/dto/SessionNextQuestionResponse.java
+export interface SessionNextQuestionResponse {
+  sessionId: number
+  questionIndex: number // 2~4 (1번은 start API 담당)
+  maxQuestionCount: number // MVP-2 고정값 4
+  questionType: QuestionType
+  question: AiQuestionGenerateResponse
+}

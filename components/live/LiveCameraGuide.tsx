@@ -1,25 +1,29 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
 import { Camera, CameraOff, Video } from 'lucide-react'
 
 interface LiveCameraGuideProps {
   className?: string
-  controls?: ReactNode
   compact?: boolean
   fill?: boolean
 }
 
 type CameraStatus = 'idle' | 'ready' | 'blocked' | 'unsupported'
 
-export function LiveCameraGuide({
-  className,
-  controls,
-  compact = false,
-  fill = false,
-}: LiveCameraGuideProps) {
+export const LiveCameraGuide = forwardRef<
+  HTMLVideoElement,
+  LiveCameraGuideProps
+>(function LiveCameraGuide({ className, compact = false, fill = false }, ref) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  useImperativeHandle(ref, () => videoRef.current!, [])
+
   const [status, setStatus] = useState<CameraStatus>('idle')
   const [enabled, setEnabled] = useState(true)
 
@@ -106,7 +110,6 @@ export function LiveCameraGuide({
           )}
         </div>
         <div className="flex items-center gap-2">
-          {controls}
           <button
             type="button"
             onClick={handleCameraToggle}
@@ -163,4 +166,4 @@ export function LiveCameraGuide({
       </div>
     </section>
   )
-}
+})

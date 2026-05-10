@@ -53,7 +53,7 @@ export function LiveMetrics({
           {duration} / {totalDuration}
         </span>
         <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-600">
-          턴 {currentTurn}
+          질문 {currentTurn}
         </span>
       </div>
 

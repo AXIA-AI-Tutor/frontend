@@ -1,15 +1,22 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
+import { getApiErrorMessage, isApiError } from '@/lib/api/client'
+import { getSessionReport } from '@/lib/api/reports'
+import { getMySessions } from '@/lib/api/sessions'
+import {
+  isPracticeSessionActive,
+  usePracticeSessionStore,
+} from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
 import type { ReportAvailabilityStatus, ReportListItem } from '@/types/report'
 import type { SessionDifficulty, SessionMode } from '@/types/session'
 
 interface ReportListScreenProps {
-  items: ReportListItem[]
   onNavigate: (screen: Screen) => void
   onToast: (msg: string) => void
 }
@@ -33,9 +40,9 @@ const DIFFICULTY_COLOR: Record<SessionDifficulty, string> = {
 
 const REPORT_STATUS_LABEL: Record<ReportAvailabilityStatus, string> = {
   READY: '완료',
-  MISSING: '리포트 없음',
+  MISSING: '준비 중',
   GENERATING: '집계 중',
-  FAILED: '생성 실패',
+  FAILED: '잠시 후 확인',
 }
 
 function formatDate(dateStr: string) {
@@ -55,9 +62,74 @@ function getReportStatus(item: ReportListItem): ReportAvailabilityStatus {
   return item.reportStatus ?? (item.report ? 'READY' : 'MISSING')
 }
 
-export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
+function getReportStatusFromError(error: unknown): ReportAvailabilityStatus {
+  if (isApiError(error) && error.response?.status === 404) {
+    return 'MISSING'
+  }
+
+  return 'FAILED'
+}
+
+export function ReportListScreen({
+  onNavigate,
+  onToast,
+}: ReportListScreenProps) {
+  const hasActiveSession = usePracticeSessionStore((state) =>
+    isPracticeSessionActive(state.sessionStart)
+  )
   const router = useRouter()
-  const completed = items.filter((i) => i.session.status === 'COMPLETED')
+  const [items, setItems] = useState<ReportListItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchSessions() {
+      setIsLoading(true)
+      setFetchError(null)
+
+      try {
+        const sessions = await getMySessions()
+        const completed = sessions.filter((s) => s.status === 'COMPLETED')
+
+        const items = await Promise.all(
+          completed.map(async (session): Promise<ReportListItem> => {
+            try {
+              const report = await getSessionReport(session.id)
+              return { session, report, reportStatus: 'READY' }
+            } catch (error) {
+              return {
+                session,
+                report: null,
+                reportStatus: getReportStatusFromError(error),
+              }
+            }
+          })
+        )
+
+        if (!cancelled) {
+          setItems(items)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          const message = getApiErrorMessage(
+            error,
+            '세션 목록을 불러오지 못했습니다.'
+          )
+          setFetchError(message)
+          onToast(message)
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
+    }
+
+    void fetchSessions()
+    return () => {
+      cancelled = true
+    }
+  }, [onToast])
 
   return (
     <>
@@ -76,14 +148,26 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
       </header>
 
       {/* 콘텐츠 */}
-      <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
-        {completed.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-slate-400">완료된 세션이 없습니다.</p>
+      <div className="absolute inset-x-3.5 bottom-17.5 top-16 overflow-auto pb-3 lg:static lg:overflow-visible lg:pb-0">
+        {isLoading ? (
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
+            <p className="text-sm text-slate-400">불러오는 중...</p>
+          </div>
+        ) : fetchError ? (
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
+            <p className="text-sm text-slate-400 lg:text-base lg:font-bold">
+              {fetchError}
+            </p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex h-full items-center justify-center lg:h-[calc(100vh-200px)]">
+            <p className="text-sm text-slate-400 lg:text-base lg:font-bold">
+              완료된 세션이 없습니다.
+            </p>
           </div>
         ) : (
-          <ul className="flex flex-col gap-2 mt-2.5">
-            {completed.map((item) => {
+          <ul className="mt-2.5 flex flex-col gap-2">
+            {items.map((item) => {
               const { session, report } = item
               const duration = formatDuration(
                 session.startedAt,
@@ -148,7 +232,11 @@ export function ReportListScreen({ items, onNavigate }: ReportListScreenProps) {
         )}
       </div>
 
-      <BottomNav current="report" onNavigate={onNavigate} />
+      <BottomNav
+        current="report"
+        onNavigate={onNavigate}
+        disabledScreens={hasActiveSession ? [] : ['live']}
+      />
     </>
   )
 }

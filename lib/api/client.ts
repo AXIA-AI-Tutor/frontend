@@ -31,8 +31,38 @@ export const apiClient = axios.create({
   },
 })
 
+// 401 응답 시 로그인 페이지로 리다이렉트
+// /api/users/me는 fetchCurrentUser가 자체적으로 401을 처리하므로 제외한다.
+// 포함 시 AuthProvider → initialize → fetchCurrentUser → 401 → 인터셉터 리다이렉트 → 루프 발생.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    const isUsersMe = error.config?.url?.includes('/api/users/me')
+    if (
+      error.response?.status === 401 &&
+      typeof window !== 'undefined' &&
+      !isUsersMe
+    ) {
+      const currentPath = window.location.pathname + window.location.search
+      const params = new URLSearchParams({ redirect: currentPath })
+      window.location.replace(`/login?${params.toString()}`)
+    }
+    return Promise.reject(error)
+  }
+)
+
 export function isApiError(
   error: unknown
 ): error is AxiosError<ApiErrorResponse> {
   return axios.isAxiosError(error)
+}
+
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  if (isApiError(error) && error.response?.data.message) {
+    return error.response.data.message
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return fallback
 }
