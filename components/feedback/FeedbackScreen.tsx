@@ -332,7 +332,7 @@ export function FeedbackScreen({
                 Q{turnNumber}. {displayTurn.topic}
               </span>
               <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-600">
-                {displayFeedback.durationLabel ?? '00:00'}
+                {displayFeedback.durationLabel ?? '--:--'}
               </span>
             </div>
             <p className="mt-3 break-keep text-lg font-black leading-snug text-slate-950">
