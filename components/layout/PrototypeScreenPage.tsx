@@ -11,6 +11,7 @@ import { LiveScreen } from '@/components/live/LiveScreen'
 import { ReportListScreen } from '@/components/report/ReportListScreen'
 import { ReportScreen } from '@/components/report/ReportScreen'
 import { Toast } from '@/components/ui/Toast'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -47,6 +48,7 @@ function mapToFeedbackData(entry: TurnFeedbackEntry): FeedbackData {
       { label: '관련성', score: feedback.relevanceScore },
       { label: '전달력', score: feedback.deliveryScore },
     ],
+    durationLabel: getAnswerDurationLabel(answer),
   }
 }
 
@@ -254,7 +256,7 @@ export function PrototypeScreenPage({
     ),
     live: (
       <LiveScreen
-        key={`live-${turnNumber}-${sessionId ?? 'mock'}`}
+        key={`live-${turnNumber}-${sessionId ?? 'no-session'}`}
         initialTurnNumber={turnNumber}
         sessionId={sessionId}
         onNavigate={navigate}
@@ -269,6 +271,7 @@ export function PrototypeScreenPage({
       return (
         <FeedbackScreen
           turnNumber={turnNumber}
+          sessionId={sessionId}
           answerId={answerId}
           turn={storeEntry ? mapToTurnData(storeEntry) : EMPTY_TURN}
           feedback={
@@ -277,6 +280,7 @@ export function PrototypeScreenPage({
           answerStatus={storeEntry?.response.answer.sttStatus}
           feedbackSource={feedbackSource}
           onNavigate={navigate}
+          onToast={showToast}
         />
       )
     })(),

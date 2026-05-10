@@ -14,8 +14,10 @@ import {
 import { FeedbackBlock } from '@/components/feedback/FeedbackBlock'
 import { ScoreRow } from '@/components/feedback/ScoreRow'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getAnswer, getAnswerFeedbacks } from '@/lib/api/answers'
+import { nextQuestion } from '@/lib/api/sessions'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -42,37 +44,33 @@ const ANSWER_STATUS_ICON: Record<SttStatus, React.ReactNode> = {
   FAILED: <AlertCircle size={14} />,
 }
 
-function pad(n: number) {
-  return String(n).padStart(2, '0')
-}
-
-function formatDurationLabel(sec: number | null) {
-  if (sec == null) return undefined
-  return `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`
-}
-
 interface FeedbackNavigationOptions {
   turnNumber?: number
+  sessionId?: number
 }
 
 interface FeedbackScreenProps {
   turnNumber: number
+  sessionId?: number
   answerId?: number
   turn: TurnData
   feedback: FeedbackData
   feedbackSource?: FeedbackSource
   answerStatus?: SttStatus
   onNavigate: (screen: Screen, options?: FeedbackNavigationOptions) => void
+  onToast: (msg: string) => void
 }
 
 export function FeedbackScreen({
   turnNumber,
+  sessionId,
   answerId,
   turn,
   feedback,
   feedbackSource = 'live',
   answerStatus = 'COMPLETED',
   onNavigate,
+  onToast,
 }: FeedbackScreenProps) {
   const hasActiveSession = usePracticeSessionStore((state) =>
     isPracticeSessionActive(state.sessionStart)
@@ -80,9 +78,15 @@ export function FeedbackScreen({
   const questionByTurn = usePracticeSessionStore(
     (state) => state.questionByTurn
   )
+  const maxQuestionCount = usePracticeSessionStore(
+    (state) => state.maxQuestionCount
+  )
+  const setTurnQuestion = usePracticeSessionStore(
+    (state) => state.setTurnQuestion
+  )
   const router = useRouter()
   const isReportSource = feedbackSource === 'report'
-  // 선호출로 store에 저장된 다음 턴 번호 (없으면 null)
+  // 이미 준비된 다음 질문이 있으면 재호출 없이 바로 이동한다.
   const nextTurnNumber = !isReportSource
     ? (Object.keys(questionByTurn)
         .map(Number)
@@ -98,6 +102,7 @@ export function FeedbackScreen({
   const [apiFeedback, setApiFeedback] = useState<FeedbackData | null>(null)
   const [apiAnswerStatus, setApiAnswerStatus] = useState<SttStatus | null>(null)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [isLoadingNextQuestion, setIsLoadingNextQuestion] = useState(false)
 
   useEffect(() => {
     if (!shouldFetchFromApi) return
@@ -140,7 +145,7 @@ export function FeedbackScreen({
                   { label: '관련성', score: latestFeedback.relevanceScore },
                   { label: '전달력', score: latestFeedback.deliveryScore },
                 ],
-                durationLabel: formatDurationLabel(answerData.durationSec),
+                durationLabel: getAnswerDurationLabel(answerData),
               }
             : {
                 answer: answerData.transcript,
@@ -148,7 +153,7 @@ export function FeedbackScreen({
                 evidence: null,
                 improvedExample: null,
                 scores: [],
-                durationLabel: formatDurationLabel(answerData.durationSec),
+                durationLabel: getAnswerDurationLabel(answerData),
               }
         )
 
@@ -181,9 +186,50 @@ export function FeedbackScreen({
       return
     }
     if (nextTurnNumber !== null) {
-      onNavigate('live', { turnNumber: nextTurnNumber })
+      onNavigate('live', { turnNumber: nextTurnNumber, sessionId })
     } else {
-      onNavigate('live')
+      onNavigate('live', { sessionId })
+    }
+  }
+
+  const canMoveToNextQuestion =
+    !isReportSource &&
+    !!sessionId &&
+    (maxQuestionCount === 0 || turnNumber < maxQuestionCount)
+
+  const handleNextQuestion = async () => {
+    if (!canMoveToNextQuestion || isLoadingNextQuestion) {
+      return
+    }
+
+    if (nextTurnNumber !== null) {
+      onNavigate('live', { turnNumber: nextTurnNumber, sessionId })
+      return
+    }
+
+    setIsLoadingNextQuestion(true)
+
+    try {
+      const res = await nextQuestion(sessionId)
+
+      if (
+        res.questionIndex <= turnNumber ||
+        res.questionIndex > res.maxQuestionCount
+      ) {
+        onToast('다음 질문 정보를 확인하지 못했습니다.')
+        return
+      }
+
+      setTurnQuestion(res.questionIndex, res.question, res.maxQuestionCount)
+      onNavigate('live', { turnNumber: res.questionIndex, sessionId })
+    } catch (error) {
+      const message = getApiErrorMessage(
+        error,
+        '다음 질문을 불러오지 못했습니다.'
+      )
+      onToast(message)
+    } finally {
+      setIsLoadingNextQuestion(false)
     }
   }
 
@@ -235,15 +281,20 @@ export function FeedbackScreen({
       <div className="absolute inset-0 overflow-auto bg-[#f8faff] px-4 pb-23 pt-5 text-slate-950 lg:static lg:min-h-[calc(100vh-132px)] lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm">
         <div className="mx-auto max-w-5xl">
           <header className="flex items-center justify-between gap-3">
-            {!isReportSource && nextTurnNumber !== null ? (
+            {canMoveToNextQuestion ? (
               <button
                 type="button"
-                onClick={handleBack}
+                onClick={() => void handleNextQuestion()}
+                disabled={isLoadingNextQuestion}
                 className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-600 px-3 text-sm font-black text-white shadow-sm transition-colors hover:bg-blue-700"
                 aria-label="다음 질문으로 이동"
               >
                 다음 질문으로
-                <ArrowRight size={15} />
+                {isLoadingNextQuestion ? (
+                  <Loader2 className="animate-spin" size={15} />
+                ) : (
+                  <ArrowRight size={15} />
+                )}
               </button>
             ) : (
               <button
@@ -281,7 +332,7 @@ export function FeedbackScreen({
                 Q{turnNumber}. {displayTurn.topic}
               </span>
               <span className="rounded-full bg-blue-50 px-2.5 py-1 text-blue-600">
-                {displayFeedback.durationLabel ?? '00:00'}
+                {displayFeedback.durationLabel ?? '--:--'}
               </span>
             </div>
             <p className="mt-3 break-keep text-lg font-black leading-snug text-slate-950">
