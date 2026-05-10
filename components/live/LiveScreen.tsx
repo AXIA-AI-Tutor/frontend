@@ -394,14 +394,6 @@ export function LiveScreen({
   }
 
   const handleOpenFeedback = () => {
-    // 다음 질문을 백그라운드에서 선호출해 FeedbackScreen 복귀 시 바로 진입 가능하게 한다.
-    if (sessionId && !isLastTurn && !questionByTurn[turnNumber + 1]) {
-      void nextQuestion(sessionId)
-        .then((res) => {
-          setTurnQuestion(res.questionIndex, res.question, res.maxQuestionCount)
-        })
-        .catch(() => {})
-    }
     onNavigate('feedback', { turnNumber, sessionId })
   }
 

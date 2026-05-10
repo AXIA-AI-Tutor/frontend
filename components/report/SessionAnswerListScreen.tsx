@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
@@ -52,13 +53,6 @@ const STT_STATUS_COLOR: Record<AnswerResponse['sttStatus'], string> = {
   PENDING: 'bg-slate-100 text-slate-500',
   COMPLETED: 'bg-emerald-50 text-emerald-600',
   FAILED: 'bg-red-50 text-red-600',
-}
-
-function formatDuration(sec: number | null) {
-  if (sec == null) return null
-  const m = Math.floor(sec / 60)
-  const s = sec % 60
-  return m > 0 ? `${m}분 ${s}초` : `${s}초`
 }
 
 function formatMetric(value: number | null) {
@@ -182,7 +176,7 @@ export function SessionAnswerListScreen({
               <ul className="flex flex-col gap-2">
                 {answers.map((answer, index) => {
                   const turn = index + 1
-                  const duration = formatDuration(answer.durationSec)
+                  const duration = getAnswerDurationLabel(answer)
                   const eyeContactScore = formatMetric(answer.eyeContactScore)
                   const postureScore = formatMetric(answer.postureScore)
                   return (

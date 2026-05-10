@@ -46,5 +46,5 @@ export interface FeedbackData {
   evidence: string | null
   improvedExample: string | null
   scores: FeedbackScore[] // 백엔드 점수 범위: 0~100
-  durationLabel?: string // 답변 소요 시간 표시 (예: '00:42')
+  durationLabel?: string // durationSec 또는 startedAt/endedAt으로 계산한 답변 소요 시간
 }
