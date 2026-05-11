@@ -3,6 +3,7 @@ import { CoachAvatar } from '@/components/ui/CoachAvatar'
 interface CoachAvatarLiveProps {
   question: string
   hint?: string
+  summary?: string | null
   speechType?: 'question' | 'feedback' | null
   compact?: boolean
   featured?: boolean
@@ -14,6 +15,7 @@ interface CoachAvatarLiveProps {
 export function CoachAvatarLive({
   question,
   hint,
+  summary,
   speechType = null,
   compact = false,
   featured = false,
@@ -21,6 +23,7 @@ export function CoachAvatarLive({
   fill = false,
   className,
 }: CoachAvatarLiveProps) {
+  const isFeedbackSpeech = speechType === 'feedback' && !!summary
   const containerClass = fill
     ? 'h-full rounded-lg'
     : featured
@@ -69,19 +72,32 @@ export function CoachAvatarLive({
                 : 'right-3.5 top-5 w-[180px]',
         ].join(' ')}
       >
-        <p className="break-keep">{question}</p>
-        {hint ? (
-          <div className="mt-2 border-t border-slate-100 pt-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-black uppercase text-blue-600">
-                Tip
-              </span>
-            </div>
-            <p className="mt-0.5 break-keep text-[11px] font-bold leading-snug text-slate-500">
-              {hint}
+        {isFeedbackSpeech ? (
+          <>
+            <span className="mb-1.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600">
+              한 줄 요약
+            </span>
+            <p className="break-keep text-[13px] font-bold leading-snug text-slate-700">
+              {summary}
             </p>
-          </div>
-        ) : null}
+          </>
+        ) : (
+          <>
+            <p className="break-keep">{question}</p>
+            {hint ? (
+              <div className="mt-2 border-t border-slate-100 pt-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black uppercase text-blue-600">
+                    Tip
+                  </span>
+                </div>
+                <p className="mt-0.5 break-keep text-[11px] font-bold leading-snug text-slate-500">
+                  {hint}
+                </p>
+              </div>
+            ) : null}
+          </>
+        )}
         {/* 말풍선 꼬리 */}
         <span
           className={

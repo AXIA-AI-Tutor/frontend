@@ -109,7 +109,7 @@ export function ReportListScreen({
         )
 
         if (!cancelled) {
-          setItems(items)
+          setItems(items.filter((item) => getReportStatus(item) === 'READY'))
         }
       } catch (error) {
         if (!cancelled) {

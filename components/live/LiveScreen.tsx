@@ -12,7 +12,9 @@ import {
 } from '@/components/live/TurnFeedbackCard'
 import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { getApiErrorMessage } from '@/lib/api/client'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
@@ -126,6 +128,17 @@ export function LiveScreen({
   const isUnmountedRef = useRef(false)
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && feedbackModalOpen) {
+        setFeedbackModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [feedbackModalOpen])
 
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
@@ -621,13 +634,31 @@ export function LiveScreen({
       return
     }
 
-    onNavigate('feedback', { turnNumber, sessionId })
+    setFeedbackModalOpen(true)
   }
+
+  const handleModalNavigate = useCallback(
+    (screen: Screen, options?: LiveNavigationOptions) => {
+      setFeedbackModalOpen(false)
+      if (screen === 'live' && options?.turnNumber !== undefined) {
+        setTurnNumber(options.turnNumber)
+        setSeconds(0)
+        setIsRecording(false)
+        setIsAnswerLayout(false)
+        setShowStartGuide(false)
+        setFeedbackStatus('ready-to-start')
+        setWaveformResetSignal((prev) => prev + 1)
+      }
+    },
+    []
+  )
 
   const coachAvatarProps = {
     question:
       question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
     hint: hint ?? '',
+    summary:
+      turnFeedbackByTurn[turnNumber]?.response?.feedback?.summary ?? null,
     speechType: currentSpeechType,
   }
 
@@ -677,6 +708,8 @@ export function LiveScreen({
     />
   )
 
+  const currentFeedbackEntry = turnFeedbackByTurn[turnNumber]
+
   const FEEDBACK_LOADING_MESSAGES = [
     'AI 코치가 답변을 분석하고 있어요...',
     '음성과 전달력을 살펴보는 중이에요...',
@@ -688,6 +721,78 @@ export function LiveScreen({
     <>
       {isSubmittingFeedback && (
         <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
+      {feedbackModalOpen && currentFeedbackEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4">
+          <div className="flex h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl shadow-2xl">
+            {/* 얇은 헤더 바 — X 버튼 전용 */}
+            <div className="flex h-9 shrink-0 items-center justify-end bg-white px-3 shadow-[0_1px_0_0_#e2e8f0]">
+              <button
+                type="button"
+                onClick={() => setFeedbackModalOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                aria-label="피드백 닫기"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            {/* FeedbackScreen */}
+            <div className="relative flex-1 overflow-hidden">
+              <FeedbackScreen
+                turnNumber={turnNumber}
+                sessionId={sessionId}
+                answerId={currentFeedbackEntry.response.answer.answerId}
+                turn={{
+                  question: currentFeedbackEntry.questionText,
+                  hint: currentFeedbackEntry.questionIntent ?? '',
+                  topic:
+                    currentFeedbackEntry.questionText.length > 16
+                      ? currentFeedbackEntry.questionText.slice(0, 16) + '…'
+                      : currentFeedbackEntry.questionText,
+                }}
+                feedback={{
+                  feedbackId: currentFeedbackEntry.response.feedback.feedbackId,
+                  answerId: currentFeedbackEntry.response.feedback.answerId,
+                  createdAt: currentFeedbackEntry.response.feedback.createdAt,
+                  answer: currentFeedbackEntry.response.answer.transcript,
+                  summary: currentFeedbackEntry.response.feedback.summary,
+                  evidence: currentFeedbackEntry.response.feedback.evidence,
+                  improvedExample:
+                    currentFeedbackEntry.response.feedback.improvementExample,
+                  scores: [
+                    {
+                      label: '논리성',
+                      score:
+                        currentFeedbackEntry.response.feedback.structureScore,
+                    },
+                    {
+                      label: '구체성',
+                      score:
+                        currentFeedbackEntry.response.feedback.specificityScore,
+                    },
+                    {
+                      label: '관련성',
+                      score:
+                        currentFeedbackEntry.response.feedback.relevanceScore,
+                    },
+                    {
+                      label: '전달력',
+                      score:
+                        currentFeedbackEntry.response.feedback.deliveryScore,
+                    },
+                  ],
+                  durationLabel: getAnswerDurationLabel(
+                    currentFeedbackEntry.response.answer
+                  ),
+                }}
+                feedbackSource="live"
+                embedded
+                onNavigate={handleModalNavigate}
+                onToast={onToast}
+              />
+            </div>
+          </div>
+        </div>
       )}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
@@ -776,14 +881,13 @@ export function LiveScreen({
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
                 {isAnswerView ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
-              {!isAnswerView ? desktopPracticeControls : null}
+              {desktopPracticeControls}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">
               <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
                 {isAnswerView ? desktopCamera : desktopSideCoachAvatar}
               </div>
-              {isAnswerView ? desktopPracticeControls : null}
               {renderTurnFeedbackCard()}
               <LiveMetrics
                 duration={timeStr}
