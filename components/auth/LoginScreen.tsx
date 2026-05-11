@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
+import { useAvatarStore } from '@/lib/stores/avatar'
 import {
   AUTH_REDIRECT_STORAGE_KEY,
   AUTH_ROUTE_GUARD_COOKIE_NAME,
@@ -47,6 +48,7 @@ export function LoginScreen() {
   const router = useRouter()
   const [isStartingLogin, setIsStartingLogin] = useState(false)
   const [loginErrorMessage, setLoginErrorMessage] = useState('')
+  const avatarGender = useAvatarStore((state) => state.gender)
   const status = useAuthStore((state) => state.status)
   const authErrorMessage = useAuthStore((state) => state.errorMessage)
   const markLoginRedirectStarted = useAuthStore(
@@ -166,66 +168,58 @@ export function LoginScreen() {
             </div>
           </div>
 
-          <aside className="hidden overflow-hidden rounded-lg border border-slate-200 bg-[#101827] text-white shadow-sm lg:block">
-            <div className="grid grid-rows-[auto_auto_auto]">
-              <div className="border-b border-white/10 px-6 py-6">
-                <p className="text-sm font-bold text-blue-200">
-                  Practice workspace
-                </p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight">
-                  오늘의 답변을 더 선명하게
-                </h2>
-              </div>
-
-              <div className="relative px-8">
-                <div className="absolute left-0 top-12 h-px w-full bg-white/10" />
-                <div className="absolute bottom-24 left-0 h-px w-full bg-white/10" />
-                <div className="absolute left-14 top-0 h-full w-px bg-white/10" />
-                <div className="absolute right-20 top-0 h-full w-px bg-white/10" />
-
-                <div className="relative flex flex-col gap-5">
-                  <div className="flex items-start justify-between gap-8">
-                    <div className="max-w-xs">
-                      <span className="inline-flex rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-black text-white">
-                        면접 모드
-                      </span>
-                      <p className="mt-4 text-4xl font-black leading-tight tracking-tight">
-                        질문, 답변, 피드백을 한 화면에서
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-white/95 px-4 pb-0 pt-5 shadow-sm">
-                      <CoachAvatar scale={1.05} />
-                    </div>
-                  </div>
-
-                  <div className="grid gap-2.5">
-                    <div className="h-2 w-32 rounded-full bg-emerald-400" />
-                    <div className="h-2 w-56 rounded-full bg-white/70" />
-                    <div className="h-2 w-44 rounded-full bg-blue-300" />
+          <aside className="hidden overflow-hidden rounded-lg border border-slate-200 bg-[#101827] text-white shadow-sm lg:flex lg:flex-col">
+            {/* 상단: 좌(텍스트) + 우(아바타) */}
+            <div className="flex flex-1 gap-0">
+              {/* 왼쪽 텍스트 영역 */}
+              <div className="flex flex-1 flex-col p-6 gap-4">
+                <div className="flex flex-col">
+                  <p className="text-sm font-bold text-blue-200">
+                    Practice workspace
+                  </p>
+                  <h2 className="mt-2 text-xl font-black tracking-tight">
+                    오늘의 답변을 더 선명하게
+                  </h2>
+                </div>
+                <div className="flex flex-col">
+                  <span className="inline-flex w-18 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-black text-white">
+                    면접 모드
+                  </span>
+                  <p className="mt-3 text-2xl font-black leading-tight tracking-tight">
+                    질문, 답변, 피드백을 한 화면에서
+                  </p>
+                  <div className="mt-16 grid gap-2">
+                    <div className="h-2.5 w-34 rounded-full bg-emerald-400" />
+                    <div className="h-2.5 w-50 rounded-full bg-white/70" />
+                    <div className="h-2.5 w-42 rounded-full bg-blue-300" />
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 border-t pb-6 border-white/10">
-                {/* 하드코딩 필요 판단: 로그인 화면 홍보용 고정 수치 (UI 전용) */}
-                {[
-                  ['82점', '최근 점수'],
-                  ['3개', '추천 과제'],
-                  ['12분', '평균 연습'],
-                ].map(([value, label]) => (
-                  <div
-                    key={label}
-                    className="border-r border-white/10 p-4 last:border-r-0"
-                  >
-                    <strong className="block text-2xl font-black">
-                      {value}
-                    </strong>
-                    <span className="mt-1 block text-xs font-bold text-slate-300">
-                      {label}
-                    </span>
-                  </div>
-                ))}
+              {/* 오른쪽 아바타 영역 */}
+              <div className="relative w-[52%] h-[340px] shrink-0 p-6 overflow-hidden">
+                <CoachAvatar gender={avatarGender} />
               </div>
+            </div>
+
+            {/* 하단: 통계 */}
+            <div className="grid grid-cols-3 border-t border-white/10">
+              {/* 하드코딩 필요 판단: 로그인 화면 홍보용 고정 수치 (UI 전용) */}
+              {[
+                ['82점', '최근 점수'],
+                ['3개', '추천 과제'],
+                ['12분', '평균 연습'],
+              ].map(([value, label]) => (
+                <div
+                  key={label}
+                  className="border-r border-white/10 p-4 last:border-r-0"
+                >
+                  <strong className="block text-2xl font-black">{value}</strong>
+                  <span className="mt-1 block text-xs font-bold text-slate-300">
+                    {label}
+                  </span>
+                </div>
+              ))}
             </div>
           </aside>
         </section>
