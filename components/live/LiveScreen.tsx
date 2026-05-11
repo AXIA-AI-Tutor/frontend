@@ -185,10 +185,11 @@ export function LiveScreen({
   }, [])
 
   const startFeedbackSummarySpeech = useCallback(
-    (summary: string | null | undefined) => {
+    (summary: string | null | undefined, onFinished?: () => void) => {
       const feedbackSummary = summary?.trim()
 
       if (!feedbackSummary || !canUseBrowserSpeech()) {
+        onFinished?.()
         return
       }
 
@@ -199,6 +200,13 @@ export function LiveScreen({
         setCurrentSpeechType('feedback')
       }
 
+      const done = () => {
+        finishFeedbackSummarySpeech()
+        if (!isUnmountedRef.current) {
+          onFinished?.()
+        }
+      }
+
       window.requestAnimationFrame(() => {
         window.setTimeout(() => {
           if (isUnmountedRef.current) {
@@ -206,7 +214,7 @@ export function LiveScreen({
           }
 
           if (!canUseBrowserSpeech()) {
-            finishFeedbackSummarySpeech()
+            done()
             return
           }
 
@@ -218,8 +226,8 @@ export function LiveScreen({
             gender: avatarGender,
             preferredVoiceNames,
           })
-          utterance.onend = finishFeedbackSummarySpeech
-          utterance.onerror = finishFeedbackSummarySpeech
+          utterance.onend = done
+          utterance.onerror = done
 
           speechSynthesis.cancel()
           speechSynthesis.resume()
@@ -228,7 +236,7 @@ export function LiveScreen({
             speechSynthesis.speak(utterance)
             speechSynthesis.resume()
           } catch {
-            finishFeedbackSummarySpeech()
+            done()
           }
         }, 0)
       })
@@ -304,7 +312,6 @@ export function LiveScreen({
           response,
         })
         setFeedbackStatus('ready')
-        startFeedbackSummarySpeech(response.feedback.summary)
 
         if (isLastTurn) {
           try {
@@ -322,10 +329,13 @@ export function LiveScreen({
           } catch {
             // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
           }
-          setShowCompletionModal(true)
+          startFeedbackSummarySpeech(response.feedback.summary, () => {
+            setShowCompletionModal(true)
+          })
           return
         }
 
+        startFeedbackSummarySpeech(response.feedback.summary)
         onToast(`질문 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
         // eslint-disable-next-line no-console
