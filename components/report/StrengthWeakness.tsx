@@ -1,6 +1,8 @@
+import type { FeedbackItem } from '@/lib/parseFeedback'
+
 interface StrengthWeaknessProps {
-  strengths: string[]
-  weaknesses: string[]
+  strengths: FeedbackItem[]
+  weaknesses: FeedbackItem[]
 }
 
 export function StrengthWeakness({
@@ -12,12 +14,15 @@ export function StrengthWeakness({
       <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm">
         <h4 className="mb-2 text-[13px] font-black">잘한 점 (강점)</h4>
         <ul className="list-disc pl-4">
-          {strengths.map((s) => (
+          {strengths.map((item, i) => (
             <li
-              key={s}
-              className="mb-1 text-[10.8px] leading-snug text-emerald-500"
+              key={i}
+              className="mb-1.5 text-[10.8px] leading-snug text-emerald-500"
             >
-              <span className="text-slate-700">{s}</span>
+              {item.label && (
+                <span className="font-black text-emerald-700">{`${item.label}: `}</span>
+              )}
+              <span className="text-slate-700">{item.text}</span>
             </li>
           ))}
         </ul>
@@ -25,12 +30,15 @@ export function StrengthWeakness({
       <div className="rounded-[18px] border border-slate-200 bg-white p-3 shadow-sm">
         <h4 className="mb-2 text-[13px] font-black">보완할 점 (약점)</h4>
         <ul className="list-disc pl-4">
-          {weaknesses.map((w) => (
+          {weaknesses.map((item, i) => (
             <li
-              key={w}
-              className="mb-1 text-[10.8px] leading-snug text-red-500"
+              key={i}
+              className="mb-1.5 text-[10.8px] leading-snug text-red-500"
             >
-              <span className="text-slate-700">{w}</span>
+              {item.label && (
+                <span className="font-black text-red-700">{`${item.label}: `}</span>
+              )}
+              <span className="text-slate-700">{item.text}</span>
             </li>
           ))}
         </ul>

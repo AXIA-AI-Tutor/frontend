@@ -5,6 +5,7 @@ import { Archive, ChevronRight } from 'lucide-react'
 
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
+import { parseFeedbackText } from '@/lib/parseFeedback'
 import type { Screen } from '@/types'
 
 interface SessionSummaryProps {
@@ -55,10 +56,9 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
             : null
 
         const latestReport = reports[0] ?? null
-        const strengths =
-          latestReport?.strengths?.split('\n').find((s) => s.trim()) ?? null
+        const strengths = parseFeedbackText(latestReport?.strengths)[0] ?? null
         const improvements =
-          latestReport?.improvements?.split('\n').find((s) => s.trim()) ?? null
+          parseFeedbackText(latestReport?.improvements)[0] ?? null
 
         if (!cancelled) {
           setData({

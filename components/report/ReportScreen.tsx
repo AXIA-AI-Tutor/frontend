@@ -10,6 +10,8 @@ import { BottomNav } from '@/components/layout/BottomNav'
 import { getAnswerFeedbacks, getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
+import { parseFeedbackItems } from '@/lib/parseFeedback'
+import type { FeedbackItem } from '@/lib/parseFeedback'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -27,14 +29,6 @@ function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`
-}
-
-function splitLines(text: string | null | undefined): string[] {
-  if (!text) return []
-  return text
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean)
 }
 
 function getTurnXPositions(count: number): number[] {
@@ -67,8 +61,8 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
   const [report, setReport] = useState<ReportResponse | null>(null)
   const [averageScore, setAverageScore] = useState<number | null>(null)
   const [chartPoints, setChartPoints] = useState<TurnChartPoint[]>([])
-  const [strengths, setStrengths] = useState<string[]>([])
-  const [weaknesses, setWeaknesses] = useState<string[]>([])
+  const [strengths, setStrengths] = useState<FeedbackItem[]>([])
+  const [weaknesses, setWeaknesses] = useState<FeedbackItem[]>([])
   const reportEmptyMessage = getReportEmptyMessage(report)
 
   useEffect(() => {
@@ -139,8 +133,8 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
           setReport(latestReport)
           setAverageScore(avg)
           setChartPoints(points)
-          setStrengths(splitLines(latestReport?.strengths))
-          setWeaknesses(splitLines(latestReport?.improvements))
+          setStrengths(parseFeedbackItems(latestReport?.strengths, 3))
+          setWeaknesses(parseFeedbackItems(latestReport?.improvements, 5))
           setFetchState('done')
         }
       } catch (error) {
