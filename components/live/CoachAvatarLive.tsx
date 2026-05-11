@@ -3,6 +3,7 @@ import { CoachAvatar } from '@/components/ui/CoachAvatar'
 interface CoachAvatarLiveProps {
   question: string
   hint?: string
+  speechType?: 'question' | 'feedback' | null
   compact?: boolean
   featured?: boolean
   expanded?: boolean
@@ -13,6 +14,7 @@ interface CoachAvatarLiveProps {
 export function CoachAvatarLive({
   question,
   hint,
+  speechType = null,
   compact = false,
   featured = false,
   expanded = false,
@@ -32,6 +34,7 @@ export function CoachAvatarLive({
 
   return (
     <div
+      data-speech-type={speechType ?? undefined}
       className={[
         'relative grid place-items-center overflow-hidden border border-slate-200 bg-gradient-to-b from-[#e9edff] to-[#dce7ff] shadow-sm',
         containerClass,
