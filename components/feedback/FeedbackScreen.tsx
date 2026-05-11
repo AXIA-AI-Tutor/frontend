@@ -57,6 +57,7 @@ interface FeedbackScreenProps {
   feedback: FeedbackData
   feedbackSource?: FeedbackSource
   answerStatus?: SttStatus
+  embedded?: boolean
   onNavigate: (screen: Screen, options?: FeedbackNavigationOptions) => void
   onToast: (msg: string) => void
 }
@@ -69,6 +70,7 @@ export function FeedbackScreen({
   feedback,
   feedbackSource = 'live',
   answerStatus = 'COMPLETED',
+  embedded = false,
   onNavigate,
   onToast,
 }: FeedbackScreenProps) {
@@ -278,7 +280,9 @@ export function FeedbackScreen({
 
   return (
     <>
-      <div className="absolute inset-0 overflow-auto bg-[#f8faff] px-4 pb-23 pt-5 text-slate-950 lg:static lg:min-h-[calc(100vh-132px)] lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm">
+      <div
+        className={`absolute inset-0 overflow-auto bg-[#f8faff] px-4 pt-5 text-slate-950 ${embedded ? 'pb-6' : 'pb-23 lg:static lg:min-h-[calc(100vh-132px)] lg:rounded-lg lg:border lg:border-slate-200 lg:bg-white lg:p-6 lg:shadow-sm'}`}
+      >
         <div className="mx-auto max-w-5xl">
           <header className="flex items-center justify-between gap-3">
             {canMoveToNextQuestion ? (
