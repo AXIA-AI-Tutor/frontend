@@ -25,6 +25,11 @@ function getLabel(key: string): string {
   return KEY_LABELS[key] ?? key
 }
 
+// (변수명: 수치) 형태의 괄호 내용 제거 — LLM이 score 정보를 포함할 때 가드
+function cleanText(text: string): string {
+  return text.replace(/\s*\([^)]+\)/g, '').trim()
+}
+
 export function parseFeedbackItems(
   raw: string | null | undefined,
   maxItems?: number
@@ -37,7 +42,7 @@ export function parseFeedbackItems(
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((s) => ({ label: '', text: s }))
+      .map((s) => ({ label: '', text: cleanText(s) }))
     return maxItems != null ? items.slice(0, maxItems) : items
   }
 
@@ -53,14 +58,14 @@ export function parseFeedbackItems(
     const label = getLabel(match[1])
 
     if (match[2] !== undefined) {
-      const val = match[2].trim()
+      const val = cleanText(match[2])
       if (val) results.push({ label, text: val })
     } else if (match[3] !== undefined) {
       const itemPattern = /'([^']*)'/g
       let itemMatch: RegExpExecArray | null
       while ((itemMatch = itemPattern.exec(match[3])) !== null) {
         if (maxItems != null && results.length >= maxItems) break
-        const val = itemMatch[1].trim()
+        const val = cleanText(itemMatch[1])
         if (val) results.push({ label, text: val })
       }
     }
