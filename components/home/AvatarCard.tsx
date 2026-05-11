@@ -44,7 +44,7 @@ export function AvatarCard({ onChangeAvatar }: AvatarCardProps) {
   return (
     <div className="grid grid-cols-[128px_1fr] items-center gap-3 p-2.5">
       <div className="relative grid h-[126px] place-items-end overflow-hidden rounded-2xl bg-gradient-to-b from-blue-100 to-blue-50">
-        <CoachAvatar />
+        <CoachAvatar gender={selectedAvatarId} />
         <span className="absolute bottom-2.5 left-2 grid h-8 w-8 place-items-center rounded-full bg-white text-blue-600 shadow-md">
           {avatar.id === 'female' ? 'F' : 'M'}
         </span>

@@ -669,6 +669,7 @@ export function LiveScreen({
     hint: hint ?? '',
     summary:
       turnFeedbackByTurn[turnNumber]?.response?.feedback?.summary ?? null,
+    gender: avatarGender,
     speechType: currentSpeechType,
   }
 

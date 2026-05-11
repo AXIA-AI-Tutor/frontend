@@ -1,9 +1,12 @@
 import { CoachAvatar } from '@/components/ui/CoachAvatar'
+import { useMouthCue } from '@/lib/hooks/useMouthCue'
+import type { AvatarGender } from '@/lib/stores/avatar'
 
 interface CoachAvatarLiveProps {
   question: string
   hint?: string
   summary?: string | null
+  gender?: AvatarGender
   speechType?: 'question' | 'feedback' | null
   compact?: boolean
   featured?: boolean
@@ -16,6 +19,7 @@ export function CoachAvatarLive({
   question,
   hint,
   summary,
+  gender = 'female',
   speechType = null,
   compact = false,
   featured = false,
@@ -35,41 +39,39 @@ export function CoachAvatarLive({
           : 'mb-2.5 h-[230px] rounded-[18px]'
   const hasTopBubble = featured || expanded
 
+  const speakingText =
+    speechType === 'question'
+      ? question
+      : speechType === 'feedback' && summary
+        ? summary
+        : null
+  const mouthShape = useMouthCue(speakingText, speechType !== null)
+
   return (
     <div
       data-speech-type={speechType ?? undefined}
       className={[
-        'relative grid place-items-center overflow-hidden border border-slate-200 bg-gradient-to-b from-[#e9edff] to-[#dce7ff] shadow-sm',
+        'relative overflow-hidden border border-slate-200 bg-linear-to-b from-[#e9edff] to-[#dce7ff] shadow-sm',
         containerClass,
         className,
       ].join(' ')}
     >
-      {/* 아바타 (1.5배 크기) */}
-      <div
-        className={[
-          'absolute',
-          featured
-            ? 'bottom-8 left-1/2 -translate-x-1/2 scale-[1.7] lg:bottom-10 lg:scale-[2]'
-            : expanded
-              ? 'bottom-5 left-1/2 -translate-x-1/2 scale-[1.25] lg:bottom-7 lg:scale-[1.45]'
-              : compact
-                ? 'bottom-4 left-10 scale-110'
-                : 'bottom-3 left-9 scale-125',
-        ].join(' ')}
-      >
-        <CoachAvatar />
+      {/* 아바타 이미지 */}
+      <div className="absolute inset-0">
+        <CoachAvatar gender={gender} mouthShape={mouthShape} />
       </div>
+
       {/* 말풍선 */}
       <div
         className={[
           'absolute rounded-[18px] bg-white p-3 text-[13px] font-black leading-snug shadow-md',
           featured
-            ? 'left-1/2 top-6 w-[calc(100%-40px)] max-w-[460px] -translate-x-1/2 lg:top-8 lg:p-5 lg:text-base'
+            ? 'left-1/2 top-6 w-[calc(100%-40px)] max-w-115 -translate-x-1/2 lg:top-8 lg:p-5 lg:text-base'
             : expanded
               ? 'left-1/2 top-6 w-[calc(100%-40px)] -translate-x-1/2 lg:top-7'
               : compact
-                ? 'right-4 top-5 w-[190px]'
-                : 'right-3.5 top-5 w-[180px]',
+                ? 'right-4 top-5 w-47.5'
+                : 'right-3.5 top-5 w-45',
         ].join(' ')}
       >
         {isFeedbackSpeech ? (
