@@ -12,6 +12,7 @@ interface TurnFeedbackCardProps {
   status: TurnFeedbackStatus
   turnNumber: number
   onOpen: () => void
+  disabled?: boolean
 }
 
 const STATUS_COPY: Record<
@@ -48,10 +49,12 @@ export function TurnFeedbackCard({
   status,
   turnNumber,
   onOpen,
+  disabled = false,
 }: TurnFeedbackCardProps) {
   const copy = STATUS_COPY[status]
   const isReady = status === 'ready'
   const isGenerating = status === 'generating'
+  const isOpenDisabled = disabled || !isReady
 
   return (
     <section className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm lg:mb-0 lg:rounded-lg lg:p-4">
@@ -83,8 +86,9 @@ export function TurnFeedbackCard({
             {isReady ? (
               <button
                 type="button"
-                onClick={onOpen}
-                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-600 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100"
+                onClick={isOpenDisabled ? undefined : onOpen}
+                disabled={isOpenDisabled}
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full bg-emerald-50 px-2.5 text-[11px] font-black text-emerald-600 transition-colors hover:bg-emerald-100 focus:outline-none focus:ring-4 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                 aria-label={`질문 ${turnNumber} 피드백 보기`}
               >
                 <MessageSquareText size={12} />

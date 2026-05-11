@@ -5,6 +5,7 @@ import { Archive, ChevronRight } from 'lucide-react'
 
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
+import { parseFeedbackText } from '@/lib/parseFeedback'
 import type { Screen } from '@/types'
 
 interface SessionSummaryProps {
@@ -55,15 +56,14 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
             : null
 
         const latestReport = reports[0] ?? null
-        const strengths =
-          latestReport?.strengths?.split('\n').find((s) => s.trim()) ?? null
+        const strengths = parseFeedbackText(latestReport?.strengths)[0] ?? null
         const improvements =
-          latestReport?.improvements?.split('\n').find((s) => s.trim()) ?? null
+          parseFeedbackText(latestReport?.improvements)[0] ?? null
 
         if (!cancelled) {
           setData({
             averageScore,
-            sessionCount: completed.length,
+            sessionCount: validScores.length,
             strengths,
             improvements,
           })
@@ -106,8 +106,8 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
           <p className="text-[12px] text-slate-400">완료된 세션이 없습니다.</p>
         </div>
       ) : (
-        <div className="mt-[9px] grid grid-cols-3 border-t border-slate-100 pt-2.5 text-center">
-          <div>
+        <div className="mt-[9px] flex flex-col gap-2 border-t border-slate-100 pt-2.5 lg:flex-row lg:gap-7">
+          <div className="text-center lg:w-[7%] lg:shrink-0 lg:pl-4">
             <b className="block text-[13px]">평균 점수</b>
             <span className="text-[12px] font-black text-blue-600">
               {data.averageScore != null ? `${data.averageScore}점` : '-'}
@@ -116,15 +116,15 @@ export function SessionSummary({ onNavigate }: SessionSummaryProps) {
               (최근 {data.sessionCount}회)
             </small>
           </div>
-          <div>
-            <b className="block text-[13px]">강점</b>
-            <span className="text-[12px] font-black text-emerald-500">
+          <div className="lg:w-[42%]">
+            <b className="mb-1 block text-[13px]">강점</b>
+            <span className="line-clamp-2 text-[12px] font-black text-emerald-500">
               {data.strengths ?? '-'}
             </span>
           </div>
-          <div>
-            <b className="block text-[13px]">개선 포인트</b>
-            <span className="text-[12px] font-black text-orange-500">
+          <div className="lg:flex-1">
+            <b className="mb-1 block text-[13px]">개선 포인트</b>
+            <span className="line-clamp-2 text-[12px] font-black text-orange-500">
               {data.improvements ?? '-'}
             </span>
           </div>

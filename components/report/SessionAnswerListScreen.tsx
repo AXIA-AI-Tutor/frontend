@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
+import { StrengthWeakness } from '@/components/report/StrengthWeakness'
 import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { getApiErrorMessage } from '@/lib/api/client'
-import { getSessionAnswers } from '@/lib/api/answers'
+import { getAnswerFeedbacks, getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
+import { parseFeedbackItems } from '@/lib/parseFeedback'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -69,6 +71,7 @@ export function SessionAnswerListScreen({
   const [session, setSession] = useState<SessionResponse | null>(null)
   const [answers, setAnswers] = useState<AnswerResponse[]>([])
   const [report, setReport] = useState<ReportResponse | null>(null)
+  const [questionScores, setQuestionScores] = useState<(number | null)[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
 
@@ -85,10 +88,30 @@ export function SessionAnswerListScreen({
           getSessionAnswers(sessionId),
           getSessionReport(sessionId).catch(() => null),
         ])
+
+        const allFeedbacks = await Promise.all(
+          answersData.map((a) => getAnswerFeedbacks(a.answerId).catch(() => []))
+        )
+
+        const scores = allFeedbacks.map((feedbacks) => {
+          const latest = feedbacks[feedbacks.length - 1] ?? null
+          if (!latest) return null
+          const vals = [
+            latest.structureScore,
+            latest.specificityScore,
+            latest.relevanceScore,
+            latest.deliveryScore,
+          ].filter((s): s is number => s != null)
+          return vals.length > 0
+            ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+            : null
+        })
+
         if (!cancelled) {
           setSession(sessionData)
           setAnswers(answersData)
           setReport(reportData)
+          setQuestionScores(scores)
         }
       } catch (error) {
         if (!cancelled) {
@@ -116,6 +139,9 @@ export function SessionAnswerListScreen({
   const headerTitle = session
     ? `${MODE_LABEL[session.mode]} · ${session.target}`
     : '세션 상세'
+
+  const sessionStrengths = parseFeedbackItems(report?.strengths, 3)
+  const sessionWeaknesses = parseFeedbackItems(report?.improvements, 5)
 
   return (
     <>
@@ -166,6 +192,16 @@ export function SessionAnswerListScreen({
                 </p>
               </div>
             </div>
+
+            {/* 강점 / 개선점 */}
+            {(sessionStrengths.length > 0 || sessionWeaknesses.length > 0) && (
+              <div className="mb-2.5">
+                <StrengthWeakness
+                  strengths={sessionStrengths}
+                  weaknesses={sessionWeaknesses}
+                />
+              </div>
+            )}
 
             {/* 질문 목록 */}
             {answers.length === 0 ? (
@@ -218,6 +254,11 @@ export function SessionAnswerListScreen({
                               )}
                             </div>
                           </div>
+                          {questionScores[index] != null && (
+                            <span className="shrink-0 text-sm font-black text-blue-600">
+                              {questionScores[index]}점
+                            </span>
+                          )}
                           <ChevronRight
                             size={16}
                             className="shrink-0 text-slate-300"

@@ -12,7 +12,9 @@ import {
 } from '@/components/live/TurnFeedbackCard'
 import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { getApiErrorMessage } from '@/lib/api/client'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
@@ -22,7 +24,9 @@ import {
   isPracticeSessionActive,
   usePracticeSessionStore,
 } from '@/lib/stores/practiceSession'
+import { useAvatarStore } from '@/lib/stores/avatar'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
+import { canUseBrowserSpeech, getAvatarSpeechVoice } from '@/lib/tts/speech'
 import type { Screen } from '@/types'
 import type { AiQuestionGenerateResponse } from '@/types/session'
 
@@ -73,6 +77,14 @@ export function LiveScreen({
   const [showStartGuide, setShowStartGuide] = useState(true)
   const [turnNumber, setTurnNumber] = useState(initialTurnNumber)
   const [isAnswerLayout, setIsAnswerLayout] = useState(false)
+  const [isPreparingAnswer, setIsPreparingAnswer] = useState(false)
+  const [isSpeakingQuestion, setIsSpeakingQuestion] = useState(false)
+  const [isStartingAnswer, setIsStartingAnswer] = useState(false)
+  const [isSpeakingFeedbackSummary, setIsSpeakingFeedbackSummary] =
+    useState(false)
+  const [currentSpeechType, setCurrentSpeechType] = useState<
+    'question' | 'feedback' | null
+  >(null)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready-to-start')
@@ -97,6 +109,10 @@ export function LiveScreen({
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
   const clearTurnFeedback = useTurnFeedbackStore((state) => state.clear)
   const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
+  const avatarGender = useAvatarStore((state) => state.gender)
+  const preferredVoiceNames = useAvatarStore(
+    (state) => state.preferredVoiceNames
+  )
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
   const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
     useVisionMetrics(cameraVideoRef, isRecording)
@@ -106,8 +122,23 @@ export function LiveScreen({
   const didWarnLongAnswerRef = useRef(false)
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
+  const isSpeakingQuestionRef = useRef(false)
+  const isSpeakingFeedbackSummaryRef = useRef(false)
+  const isStartingAnswerRef = useRef(false)
+  const isUnmountedRef = useRef(false)
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && feedbackModalOpen) {
+        setFeedbackModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [feedbackModalOpen])
 
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
@@ -130,9 +161,88 @@ export function LiveScreen({
     ? 'ready'
     : feedbackStatus
   const isPrimaryControlDisabled =
-    isSubmittingFeedback || isCurrentTurnAnswered || !question
+    isPreparingAnswer ||
+    isSpeakingQuestion ||
+    isStartingAnswer ||
+    isSubmittingFeedback ||
+    isCurrentTurnAnswered
   const isNextControlDisabled =
-    isSubmittingFeedback || isRecording || !isCurrentTurnAnswered
+    isSubmittingFeedback ||
+    isSpeakingFeedbackSummary ||
+    isRecording ||
+    !isCurrentTurnAnswered
+  const isAnswerView = isAnswerLayout || isPreparingAnswer
+
+  const finishFeedbackSummarySpeech = useCallback(() => {
+    isSpeakingFeedbackSummaryRef.current = false
+
+    if (isUnmountedRef.current) {
+      return
+    }
+
+    setIsSpeakingFeedbackSummary(false)
+    setCurrentSpeechType(null)
+  }, [])
+
+  const startFeedbackSummarySpeech = useCallback(
+    (summary: string | null | undefined, onFinished?: () => void) => {
+      const feedbackSummary = summary?.trim()
+
+      if (!feedbackSummary || !canUseBrowserSpeech()) {
+        onFinished?.()
+        return
+      }
+
+      isSpeakingFeedbackSummaryRef.current = true
+
+      if (!isUnmountedRef.current) {
+        setIsSpeakingFeedbackSummary(true)
+        setCurrentSpeechType('feedback')
+      }
+
+      const done = () => {
+        finishFeedbackSummarySpeech()
+        if (!isUnmountedRef.current) {
+          onFinished?.()
+        }
+      }
+
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          if (isUnmountedRef.current) {
+            return
+          }
+
+          if (!canUseBrowserSpeech()) {
+            done()
+            return
+          }
+
+          const speechSynthesis = window.speechSynthesis
+          const utterance = new SpeechSynthesisUtterance(feedbackSummary)
+
+          utterance.lang = 'ko-KR'
+          utterance.voice = getAvatarSpeechVoice(speechSynthesis, {
+            gender: avatarGender,
+            preferredVoiceNames,
+          })
+          utterance.onend = done
+          utterance.onerror = done
+
+          speechSynthesis.cancel()
+          speechSynthesis.resume()
+
+          try {
+            speechSynthesis.speak(utterance)
+            speechSynthesis.resume()
+          } catch {
+            done()
+          }
+        }, 0)
+      })
+    },
+    [avatarGender, finishFeedbackSummarySpeech, preferredVoiceNames]
+  )
 
   const finishAnswer = useCallback(
     async (reason: 'manual' | 'timeout') => {
@@ -219,10 +329,13 @@ export function LiveScreen({
           } catch {
             // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
           }
-          setShowCompletionModal(true)
+          startFeedbackSummarySpeech(response.feedback.summary, () => {
+            setShowCompletionModal(true)
+          })
           return
         }
 
+        startFeedbackSummarySpeech(response.feedback.summary)
         onToast(`질문 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -252,6 +365,7 @@ export function LiveScreen({
       resetSamples,
       sessionId,
       setTurnFeedback,
+      startFeedbackSummarySpeech,
       stopRecording,
       turnNumber,
     ]
@@ -299,7 +413,22 @@ export function LiveScreen({
     }
   }, [resetAudioRecorder])
 
-  const handleStart = async () => {
+  useEffect(() => {
+    isUnmountedRef.current = false
+
+    return () => {
+      isUnmountedRef.current = true
+      isSpeakingQuestionRef.current = false
+      isSpeakingFeedbackSummaryRef.current = false
+      isStartingAnswerRef.current = false
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [])
+
+  const handleStart = useCallback(async () => {
     if (isSubmittingRef.current) {
       return
     }
@@ -327,7 +456,120 @@ export function LiveScreen({
 
       onToast(message)
     }
-  }
+  }, [isCurrentTurnAnswered, onToast, startRecording])
+
+  const handleStartWithTts = useCallback(() => {
+    const questionText = question?.trim()
+
+    if (isSpeakingQuestionRef.current || isStartingAnswerRef.current) {
+      return
+    }
+
+    const startAnswer = async () => {
+      if (isUnmountedRef.current || isStartingAnswerRef.current) {
+        return
+      }
+
+      isStartingAnswerRef.current = true
+
+      if (!isUnmountedRef.current) {
+        setIsStartingAnswer(true)
+      }
+
+      try {
+        await handleStart()
+      } finally {
+        isStartingAnswerRef.current = false
+
+        if (!isUnmountedRef.current) {
+          setIsPreparingAnswer(false)
+          setIsStartingAnswer(false)
+        }
+      }
+    }
+
+    const runAfterPreparingScreenPaint = (callback: () => void) => {
+      if (!isUnmountedRef.current) {
+        setIsPreparingAnswer(true)
+      }
+
+      if (typeof window === 'undefined') {
+        callback()
+        return
+      }
+
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          if (isUnmountedRef.current) {
+            return
+          }
+
+          callback()
+        }, 0)
+      })
+    }
+
+    if (!questionText || !canUseBrowserSpeech()) {
+      runAfterPreparingScreenPaint(() => {
+        void startAnswer()
+      })
+      return
+    }
+
+    isSpeakingQuestionRef.current = true
+
+    if (!isUnmountedRef.current) {
+      setIsPreparingAnswer(true)
+      setIsSpeakingQuestion(true)
+      setCurrentSpeechType('question')
+    }
+
+    runAfterPreparingScreenPaint(() => {
+      const utterance = new SpeechSynthesisUtterance(questionText)
+      let didStartRecording = false
+      const speechSynthesis = window.speechSynthesis
+
+      const startAfterSpeech = () => {
+        if (didStartRecording || isUnmountedRef.current) {
+          return
+        }
+
+        didStartRecording = true
+        isSpeakingQuestionRef.current = false
+
+        if (!isUnmountedRef.current) {
+          setIsSpeakingQuestion(false)
+          setCurrentSpeechType(null)
+        }
+
+        void startAnswer()
+      }
+
+      utterance.lang = 'ko-KR'
+      utterance.voice = getAvatarSpeechVoice(speechSynthesis, {
+        gender: avatarGender,
+        preferredVoiceNames,
+      })
+      utterance.onend = startAfterSpeech
+      utterance.onerror = startAfterSpeech
+
+      speechSynthesis.cancel()
+      speechSynthesis.resume()
+
+      window.setTimeout(() => {
+        if (didStartRecording || isUnmountedRef.current) {
+          return
+        }
+
+        try {
+          speechSynthesis.speak(utterance)
+          speechSynthesis.resume()
+        } catch {
+          startAfterSpeech()
+        }
+      }, 100)
+    })
+  }, [avatarGender, handleStart, preferredVoiceNames, question])
 
   const handleStop = () => {
     void finishAnswer('manual')
@@ -335,6 +577,10 @@ export function LiveScreen({
   }
 
   const handleNextTurn = async () => {
+    if (isSpeakingFeedbackSummary) {
+      return
+    }
+
     if (isRecording || isSubmittingRef.current) {
       onToast('진행 중인 답변을 먼저 완료해 주세요.')
       return
@@ -394,20 +640,43 @@ export function LiveScreen({
   }
 
   const handleOpenFeedback = () => {
-    onNavigate('feedback', { turnNumber, sessionId })
+    if (isSpeakingFeedbackSummary) {
+      return
+    }
+
+    setFeedbackModalOpen(true)
   }
+
+  const handleModalNavigate = useCallback(
+    (screen: Screen, options?: LiveNavigationOptions) => {
+      setFeedbackModalOpen(false)
+      if (screen === 'live' && options?.turnNumber !== undefined) {
+        setTurnNumber(options.turnNumber)
+        setSeconds(0)
+        setIsRecording(false)
+        setIsAnswerLayout(false)
+        setShowStartGuide(false)
+        setFeedbackStatus('ready-to-start')
+        setWaveformResetSignal((prev) => prev + 1)
+      }
+    },
+    []
+  )
 
   const coachAvatarProps = {
     question:
       question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
     hint: hint ?? '',
+    summary:
+      turnFeedbackByTurn[turnNumber]?.response?.feedback?.summary ?? null,
+    speechType: currentSpeechType,
   }
 
   const mobileCoachAvatar = (
     <CoachAvatarLive
       {...coachAvatarProps}
-      featured={isAnswerLayout}
-      compact={!isAnswerLayout}
+      featured={isAnswerView}
+      compact={!isAnswerView}
     />
   )
 
@@ -420,7 +689,7 @@ export function LiveScreen({
   )
 
   const mobileCamera = (
-    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerLayout} />
+    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerView} />
   )
 
   const desktopPracticeControls = (
@@ -428,7 +697,7 @@ export function LiveScreen({
       isRecording={isRecording}
       showStartGuide={showStartGuide}
       onDismissStartGuide={() => setShowStartGuide(false)}
-      onStart={handleStart}
+      onStart={handleStartWithTts}
       onStop={handleStop}
       onNext={handleNextTurn}
       primaryDisabled={isPrimaryControlDisabled}
@@ -437,7 +706,7 @@ export function LiveScreen({
   )
 
   const desktopCamera = (
-    <LiveCameraGuide ref={cameraVideoRef} fill compact={isAnswerLayout} />
+    <LiveCameraGuide ref={cameraVideoRef} fill compact={isAnswerView} />
   )
 
   const renderTurnFeedbackCard = () => (
@@ -445,8 +714,11 @@ export function LiveScreen({
       status={effectiveFeedbackStatus}
       turnNumber={turnNumber}
       onOpen={handleOpenFeedback}
+      disabled={isSpeakingFeedbackSummary}
     />
   )
+
+  const currentFeedbackEntry = turnFeedbackByTurn[turnNumber]
 
   const FEEDBACK_LOADING_MESSAGES = [
     'AI 코치가 답변을 분석하고 있어요...',
@@ -459,6 +731,78 @@ export function LiveScreen({
     <>
       {isSubmittingFeedback && (
         <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
+      {feedbackModalOpen && currentFeedbackEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4">
+          <div className="flex h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl shadow-2xl">
+            {/* 얇은 헤더 바 — X 버튼 전용 */}
+            <div className="flex h-9 shrink-0 items-center justify-end bg-white px-3 shadow-[0_1px_0_0_#e2e8f0]">
+              <button
+                type="button"
+                onClick={() => setFeedbackModalOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                aria-label="피드백 닫기"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            {/* FeedbackScreen */}
+            <div className="relative flex-1 overflow-hidden">
+              <FeedbackScreen
+                turnNumber={turnNumber}
+                sessionId={sessionId}
+                answerId={currentFeedbackEntry.response.answer.answerId}
+                turn={{
+                  question: currentFeedbackEntry.questionText,
+                  hint: currentFeedbackEntry.questionIntent ?? '',
+                  topic:
+                    currentFeedbackEntry.questionText.length > 16
+                      ? currentFeedbackEntry.questionText.slice(0, 16) + '…'
+                      : currentFeedbackEntry.questionText,
+                }}
+                feedback={{
+                  feedbackId: currentFeedbackEntry.response.feedback.feedbackId,
+                  answerId: currentFeedbackEntry.response.feedback.answerId,
+                  createdAt: currentFeedbackEntry.response.feedback.createdAt,
+                  answer: currentFeedbackEntry.response.answer.transcript,
+                  summary: currentFeedbackEntry.response.feedback.summary,
+                  evidence: currentFeedbackEntry.response.feedback.evidence,
+                  improvedExample:
+                    currentFeedbackEntry.response.feedback.improvementExample,
+                  scores: [
+                    {
+                      label: '논리성',
+                      score:
+                        currentFeedbackEntry.response.feedback.structureScore,
+                    },
+                    {
+                      label: '구체성',
+                      score:
+                        currentFeedbackEntry.response.feedback.specificityScore,
+                    },
+                    {
+                      label: '관련성',
+                      score:
+                        currentFeedbackEntry.response.feedback.relevanceScore,
+                    },
+                    {
+                      label: '전달력',
+                      score:
+                        currentFeedbackEntry.response.feedback.deliveryScore,
+                    },
+                  ],
+                  durationLabel: getAnswerDurationLabel(
+                    currentFeedbackEntry.response.answer
+                  ),
+                }}
+                feedbackSource="live"
+                embedded
+                onNavigate={handleModalNavigate}
+                onToast={onToast}
+              />
+            </div>
+          </div>
+        </div>
       )}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
@@ -495,7 +839,7 @@ export function LiveScreen({
         {/* 콘텐츠 */}
         <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3">
           <div className="mb-2.5 space-y-2.5">
-            {isAnswerLayout ? (
+            {isAnswerView ? (
               <>
                 {mobileCoachAvatar}
                 {mobileCamera}
@@ -521,7 +865,7 @@ export function LiveScreen({
             isRecording={isRecording}
             showStartGuide={showStartGuide}
             onDismissStartGuide={() => setShowStartGuide(false)}
-            onStart={handleStart}
+            onStart={handleStartWithTts}
             onStop={handleStop}
             onNext={handleNextTurn}
             primaryDisabled={isPrimaryControlDisabled}
@@ -545,16 +889,15 @@ export function LiveScreen({
           <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-4">
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
-                {isAnswerLayout ? desktopFeaturedCoachAvatar : desktopCamera}
+                {isAnswerView ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
-              {!isAnswerLayout ? desktopPracticeControls : null}
+              {desktopPracticeControls}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">
               <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
-                {isAnswerLayout ? desktopCamera : desktopSideCoachAvatar}
+                {isAnswerView ? desktopCamera : desktopSideCoachAvatar}
               </div>
-              {isAnswerLayout ? desktopPracticeControls : null}
               {renderTurnFeedbackCard()}
               <LiveMetrics
                 duration={timeStr}

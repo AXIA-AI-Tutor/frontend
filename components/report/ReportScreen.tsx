@@ -7,9 +7,10 @@ import { ScoreRing } from '@/components/report/ScoreRing'
 import { TurnChart } from '@/components/report/TurnChart'
 import { StrengthWeakness } from '@/components/report/StrengthWeakness'
 import { BottomNav } from '@/components/layout/BottomNav'
-import { getAnswerFeedbacks, getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getMySessions } from '@/lib/api/sessions'
+import { parseFeedbackItems } from '@/lib/parseFeedback'
+import type { FeedbackItem } from '@/lib/parseFeedback'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -27,14 +28,6 @@ function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '-'
   const d = new Date(dateStr)
   return `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`
-}
-
-function splitLines(text: string | null | undefined): string[] {
-  if (!text) return []
-  return text
-    .split('\n')
-    .map((s) => s.trim())
-    .filter(Boolean)
 }
 
 function getTurnXPositions(count: number): number[] {
@@ -67,8 +60,8 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
   const [report, setReport] = useState<ReportResponse | null>(null)
   const [averageScore, setAverageScore] = useState<number | null>(null)
   const [chartPoints, setChartPoints] = useState<TurnChartPoint[]>([])
-  const [strengths, setStrengths] = useState<string[]>([])
-  const [weaknesses, setWeaknesses] = useState<string[]>([])
+  const [strengths, setStrengths] = useState<FeedbackItem[]>([])
+  const [weaknesses, setWeaknesses] = useState<FeedbackItem[]>([])
   const reportEmptyMessage = getReportEmptyMessage(report)
 
   useEffect(() => {
@@ -86,12 +79,9 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
 
         const latest = completed[0]
 
-        const [answers, allReports] = await Promise.all([
-          getSessionAnswers(latest.id),
-          Promise.all(
-            completed.map((s) => getSessionReport(s.id).catch(() => null))
-          ),
-        ])
+        const allReports = await Promise.all(
+          completed.map((s) => getSessionReport(s.id).catch(() => null))
+        )
 
         const latestReport = allReports[0] ?? null
         const validScores = allReports
@@ -105,42 +95,34 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
               )
             : null
 
-        const feedbackResults = await Promise.all(
-          answers.map((a) => getAnswerFeedbacks(a.answerId).catch(() => []))
-        )
+        // 세션별 총점으로 경향선 구성 (오래된 순, 5개 이상일 때만 표시)
+        const scoredSessions = allReports
+          .map((r, i) => ({ score: r?.totalScore ?? null, sessionIdx: i }))
+          .filter(
+            (item): item is { score: number; sessionIdx: number } =>
+              item.score != null
+          )
+          .reverse()
 
-        const xPositions = getTurnXPositions(answers.length)
-        const points: TurnChartPoint[] = answers.map((_answer, i) => {
-          const feedbacks = feedbackResults[i]
-          const latest = feedbacks[feedbacks.length - 1] ?? null
-          const scores = [
-            latest?.structureScore,
-            latest?.specificityScore,
-            latest?.relevanceScore,
-            latest?.deliveryScore,
-          ].filter((s): s is number => s != null)
-          const score =
-            scores.length > 0
-              ? Math.round(
-                  scores.reduce((a: number, b: number) => a + b, 0) /
-                    scores.length
-                )
-              : 50
-          return {
+        const MIN_CHART_SESSIONS = 5
+        let points: TurnChartPoint[] = []
+        if (scoredSessions.length >= MIN_CHART_SESSIONS) {
+          const xPositions = getTurnXPositions(scoredSessions.length)
+          points = scoredSessions.map(({ score }, i) => ({
             x: xPositions[i],
             y: scoreToY(score),
-            label: `Q${i + 1}`,
-            msg: `Q${i + 1}: ${score}점`,
-          }
-        })
+            label: `${i + 1}회차`,
+            msg: `${i + 1}회차: ${score}점`,
+          }))
+        }
 
         if (!cancelled) {
           setLatestSession(latest)
           setReport(latestReport)
           setAverageScore(avg)
           setChartPoints(points)
-          setStrengths(splitLines(latestReport?.strengths))
-          setWeaknesses(splitLines(latestReport?.improvements))
+          setStrengths(parseFeedbackItems(latestReport?.strengths, 3))
+          setWeaknesses(parseFeedbackItems(latestReport?.improvements, 5))
           setFetchState('done')
         }
       } catch (error) {
@@ -256,15 +238,25 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
               )}
             </div>
 
-            {/* 질문별 차트 */}
-            {chartPoints.length > 0 && (
-              <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
+            {/* 성장 그래프 */}
+            <div className="mb-2.5 rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-sm">
+              <h3 className="mb-2 text-sm font-black">성장 그래프</h3>
+              {chartPoints.length > 0 ? (
                 <TurnChart
                   points={chartPoints}
                   onPointClick={(_, msg) => onToast(msg)}
                 />
-              </div>
-            )}
+              ) : (
+                <div className="flex h-21 flex-col items-center justify-center gap-1 border-b border-l border-slate-200 lg:h-29.5">
+                  <p className="text-xs font-bold text-slate-400">
+                    성장그래프 확인을 위해서는 최소 5건의 리포트가 필요합니다.
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    연습을 조금 더 진행해주세요.
+                  </p>
+                </div>
+              )}
+            </div>
 
             {/* 강점 / 개선점 */}
             {(strengths.length > 0 || weaknesses.length > 0) && (

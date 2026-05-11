@@ -153,16 +153,19 @@ export const LiveCameraGuide = forwardRef<
           </div>
         ) : null}
 
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-[12%] h-[42%] w-[24%] -translate-x-1/2 rounded-[44%] border-2 border-emerald-300/90 shadow-[0_0_0_999px_rgba(15,23,42,.14)]" />
-          <div className="absolute bottom-[16%] left-1/2 h-[26%] w-[48%] -translate-x-1/2 rounded-t-[999px] border-2 border-dashed border-sky-300/90" />
-          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/25" />
-          <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-white/20" />
-        </div>
-
-        <div className="absolute left-4 top-4 rounded-lg bg-slate-950/60 px-3 py-2 text-xs font-bold text-white backdrop-blur">
-          머리는 초록 영역, 어깨는 점선 안쪽
-        </div>
+        {!compact && (
+          <>
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute left-1/2 top-[12%] h-[42%] w-[24%] -translate-x-1/2 rounded-[44%] border-2 border-emerald-300/90 shadow-[0_0_0_999px_rgba(15,23,42,.14)]" />
+              <div className="absolute bottom-[16%] left-1/2 h-[26%] w-[48%] -translate-x-1/2 rounded-t-[999px] border-2 border-dashed border-sky-300/90" />
+              <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/25" />
+              <div className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-white/20" />
+            </div>
+            <div className="absolute left-4 top-4 rounded-lg bg-slate-950/60 px-3 py-2 text-xs font-bold text-white backdrop-blur">
+              머리는 초록 영역, 어깨는 점선 안쪽
+            </div>
+          </>
+        )}
       </div>
     </section>
   )
