@@ -628,6 +628,8 @@ export function LiveScreen({
     question:
       question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
     hint: hint ?? '',
+    summary:
+      turnFeedbackByTurn[turnNumber]?.response?.feedback?.summary ?? null,
     speechType: currentSpeechType,
   }
 
