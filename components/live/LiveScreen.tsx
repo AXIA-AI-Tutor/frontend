@@ -22,7 +22,9 @@ import {
   isPracticeSessionActive,
   usePracticeSessionStore,
 } from '@/lib/stores/practiceSession'
+import { useAvatarStore } from '@/lib/stores/avatar'
 import { useTurnFeedbackStore } from '@/lib/stores/turnFeedback'
+import { canUseBrowserSpeech, getAvatarSpeechVoice } from '@/lib/tts/speech'
 import type { Screen } from '@/types'
 import type { AiQuestionGenerateResponse } from '@/types/session'
 
@@ -61,14 +63,6 @@ function getQuestionIntent(question: AiQuestionGenerateResponse | null) {
   return question?.question_intent || null
 }
 
-function getKoreanSpeechVoice(speechSynthesis: SpeechSynthesis) {
-  return (
-    speechSynthesis
-      .getVoices()
-      .find((voice) => voice.lang.toLowerCase().startsWith('ko')) ?? null
-  )
-}
-
 export function LiveScreen({
   onNavigate,
   onToast,
@@ -84,6 +78,11 @@ export function LiveScreen({
   const [isPreparingAnswer, setIsPreparingAnswer] = useState(false)
   const [isSpeakingQuestion, setIsSpeakingQuestion] = useState(false)
   const [isStartingAnswer, setIsStartingAnswer] = useState(false)
+  const [isSpeakingFeedbackSummary, setIsSpeakingFeedbackSummary] =
+    useState(false)
+  const [currentSpeechType, setCurrentSpeechType] = useState<
+    'question' | 'feedback' | null
+  >(null)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready-to-start')
@@ -108,6 +107,10 @@ export function LiveScreen({
   const setTurnFeedback = useTurnFeedbackStore((state) => state.setTurnFeedback)
   const clearTurnFeedback = useTurnFeedbackStore((state) => state.clear)
   const turnFeedbackByTurn = useTurnFeedbackStore((state) => state.byTurn)
+  const avatarGender = useAvatarStore((state) => state.gender)
+  const preferredVoiceNames = useAvatarStore(
+    (state) => state.preferredVoiceNames
+  )
   const cameraVideoRef = useRef<HTMLVideoElement>(null)
   const { currentEyeContact, currentPosture, getAverageScores, resetSamples } =
     useVisionMetrics(cameraVideoRef, isRecording)
@@ -118,6 +121,7 @@ export function LiveScreen({
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
   const isSpeakingQuestionRef = useRef(false)
+  const isSpeakingFeedbackSummaryRef = useRef(false)
   const isStartingAnswerRef = useRef(false)
   const isUnmountedRef = useRef(false)
 
@@ -150,8 +154,74 @@ export function LiveScreen({
     isSubmittingFeedback ||
     isCurrentTurnAnswered
   const isNextControlDisabled =
-    isSubmittingFeedback || isRecording || !isCurrentTurnAnswered
+    isSubmittingFeedback ||
+    isSpeakingFeedbackSummary ||
+    isRecording ||
+    !isCurrentTurnAnswered
   const isAnswerView = isAnswerLayout || isPreparingAnswer
+
+  const finishFeedbackSummarySpeech = useCallback(() => {
+    isSpeakingFeedbackSummaryRef.current = false
+
+    if (isUnmountedRef.current) {
+      return
+    }
+
+    setIsSpeakingFeedbackSummary(false)
+    setCurrentSpeechType(null)
+  }, [])
+
+  const startFeedbackSummarySpeech = useCallback(
+    (summary: string | null | undefined) => {
+      const feedbackSummary = summary?.trim()
+
+      if (!feedbackSummary || !canUseBrowserSpeech()) {
+        return
+      }
+
+      isSpeakingFeedbackSummaryRef.current = true
+
+      if (!isUnmountedRef.current) {
+        setIsSpeakingFeedbackSummary(true)
+        setCurrentSpeechType('feedback')
+      }
+
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          if (isUnmountedRef.current) {
+            return
+          }
+
+          if (!canUseBrowserSpeech()) {
+            finishFeedbackSummarySpeech()
+            return
+          }
+
+          const speechSynthesis = window.speechSynthesis
+          const utterance = new SpeechSynthesisUtterance(feedbackSummary)
+
+          utterance.lang = 'ko-KR'
+          utterance.voice = getAvatarSpeechVoice(speechSynthesis, {
+            gender: avatarGender,
+            preferredVoiceNames,
+          })
+          utterance.onend = finishFeedbackSummarySpeech
+          utterance.onerror = finishFeedbackSummarySpeech
+
+          speechSynthesis.cancel()
+          speechSynthesis.resume()
+
+          try {
+            speechSynthesis.speak(utterance)
+            speechSynthesis.resume()
+          } catch {
+            finishFeedbackSummarySpeech()
+          }
+        }, 0)
+      })
+    },
+    [avatarGender, finishFeedbackSummarySpeech, preferredVoiceNames]
+  )
 
   const finishAnswer = useCallback(
     async (reason: 'manual' | 'timeout') => {
@@ -221,6 +291,7 @@ export function LiveScreen({
           response,
         })
         setFeedbackStatus('ready')
+        startFeedbackSummarySpeech(response.feedback.summary)
 
         if (isLastTurn) {
           try {
@@ -271,6 +342,7 @@ export function LiveScreen({
       resetSamples,
       sessionId,
       setTurnFeedback,
+      startFeedbackSummarySpeech,
       stopRecording,
       turnNumber,
     ]
@@ -324,6 +396,7 @@ export function LiveScreen({
     return () => {
       isUnmountedRef.current = true
       isSpeakingQuestionRef.current = false
+      isSpeakingFeedbackSummaryRef.current = false
       isStartingAnswerRef.current = false
 
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -413,17 +486,7 @@ export function LiveScreen({
       })
     }
 
-    const hasWindow = typeof window !== 'undefined'
-    const hasSpeechSynthesis = hasWindow && 'speechSynthesis' in window
-    const hasSpeechSynthesisUtterance =
-      hasWindow && 'SpeechSynthesisUtterance' in window
-
-    if (
-      !questionText ||
-      !hasWindow ||
-      !hasSpeechSynthesis ||
-      !hasSpeechSynthesisUtterance
-    ) {
+    if (!questionText || !canUseBrowserSpeech()) {
       runAfterPreparingScreenPaint(() => {
         void startAnswer()
       })
@@ -435,6 +498,7 @@ export function LiveScreen({
     if (!isUnmountedRef.current) {
       setIsPreparingAnswer(true)
       setIsSpeakingQuestion(true)
+      setCurrentSpeechType('question')
     }
 
     runAfterPreparingScreenPaint(() => {
@@ -452,13 +516,17 @@ export function LiveScreen({
 
         if (!isUnmountedRef.current) {
           setIsSpeakingQuestion(false)
+          setCurrentSpeechType(null)
         }
 
         void startAnswer()
       }
 
       utterance.lang = 'ko-KR'
-      utterance.voice = getKoreanSpeechVoice(speechSynthesis)
+      utterance.voice = getAvatarSpeechVoice(speechSynthesis, {
+        gender: avatarGender,
+        preferredVoiceNames,
+      })
       utterance.onend = startAfterSpeech
       utterance.onerror = startAfterSpeech
 
@@ -478,7 +546,7 @@ export function LiveScreen({
         }
       }, 100)
     })
-  }, [handleStart, question])
+  }, [avatarGender, handleStart, preferredVoiceNames, question])
 
   const handleStop = () => {
     void finishAnswer('manual')
@@ -486,6 +554,10 @@ export function LiveScreen({
   }
 
   const handleNextTurn = async () => {
+    if (isSpeakingFeedbackSummary) {
+      return
+    }
+
     if (isRecording || isSubmittingRef.current) {
       onToast('진행 중인 답변을 먼저 완료해 주세요.')
       return
@@ -545,6 +617,10 @@ export function LiveScreen({
   }
 
   const handleOpenFeedback = () => {
+    if (isSpeakingFeedbackSummary) {
+      return
+    }
+
     onNavigate('feedback', { turnNumber, sessionId })
   }
 
@@ -552,6 +628,7 @@ export function LiveScreen({
     question:
       question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
     hint: hint ?? '',
+    speechType: currentSpeechType,
   }
 
   const mobileCoachAvatar = (
@@ -596,6 +673,7 @@ export function LiveScreen({
       status={effectiveFeedbackStatus}
       turnNumber={turnNumber}
       onOpen={handleOpenFeedback}
+      disabled={isSpeakingFeedbackSummary}
     />
   )
 
