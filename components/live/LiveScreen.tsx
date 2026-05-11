@@ -61,6 +61,14 @@ function getQuestionIntent(question: AiQuestionGenerateResponse | null) {
   return question?.question_intent || null
 }
 
+function getKoreanSpeechVoice(speechSynthesis: SpeechSynthesis) {
+  return (
+    speechSynthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith('ko')) ?? null
+  )
+}
+
 export function LiveScreen({
   onNavigate,
   onToast,
@@ -73,6 +81,9 @@ export function LiveScreen({
   const [showStartGuide, setShowStartGuide] = useState(true)
   const [turnNumber, setTurnNumber] = useState(initialTurnNumber)
   const [isAnswerLayout, setIsAnswerLayout] = useState(false)
+  const [isPreparingAnswer, setIsPreparingAnswer] = useState(false)
+  const [isSpeakingQuestion, setIsSpeakingQuestion] = useState(false)
+  const [isStartingAnswer, setIsStartingAnswer] = useState(false)
   const [waveformResetSignal, setWaveformResetSignal] = useState(0)
   const [feedbackStatus, setFeedbackStatus] =
     useState<TurnFeedbackStatus>('ready-to-start')
@@ -106,6 +117,9 @@ export function LiveScreen({
   const didWarnLongAnswerRef = useRef(false)
   const startedAtRef = useRef<Date | null>(null)
   const isSubmittingRef = useRef(false)
+  const isSpeakingQuestionRef = useRef(false)
+  const isStartingAnswerRef = useRef(false)
+  const isUnmountedRef = useRef(false)
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
 
@@ -130,9 +144,14 @@ export function LiveScreen({
     ? 'ready'
     : feedbackStatus
   const isPrimaryControlDisabled =
-    isSubmittingFeedback || isCurrentTurnAnswered || !question
+    isPreparingAnswer ||
+    isSpeakingQuestion ||
+    isStartingAnswer ||
+    isSubmittingFeedback ||
+    isCurrentTurnAnswered
   const isNextControlDisabled =
     isSubmittingFeedback || isRecording || !isCurrentTurnAnswered
+  const isAnswerView = isAnswerLayout || isPreparingAnswer
 
   const finishAnswer = useCallback(
     async (reason: 'manual' | 'timeout') => {
@@ -299,7 +318,21 @@ export function LiveScreen({
     }
   }, [resetAudioRecorder])
 
-  const handleStart = async () => {
+  useEffect(() => {
+    isUnmountedRef.current = false
+
+    return () => {
+      isUnmountedRef.current = true
+      isSpeakingQuestionRef.current = false
+      isStartingAnswerRef.current = false
+
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel()
+      }
+    }
+  }, [])
+
+  const handleStart = useCallback(async () => {
     if (isSubmittingRef.current) {
       return
     }
@@ -327,7 +360,125 @@ export function LiveScreen({
 
       onToast(message)
     }
-  }
+  }, [isCurrentTurnAnswered, onToast, startRecording])
+
+  const handleStartWithTts = useCallback(() => {
+    const questionText = question?.trim()
+
+    if (isSpeakingQuestionRef.current || isStartingAnswerRef.current) {
+      return
+    }
+
+    const startAnswer = async () => {
+      if (isUnmountedRef.current || isStartingAnswerRef.current) {
+        return
+      }
+
+      isStartingAnswerRef.current = true
+
+      if (!isUnmountedRef.current) {
+        setIsStartingAnswer(true)
+      }
+
+      try {
+        await handleStart()
+      } finally {
+        isStartingAnswerRef.current = false
+
+        if (!isUnmountedRef.current) {
+          setIsPreparingAnswer(false)
+          setIsStartingAnswer(false)
+        }
+      }
+    }
+
+    const runAfterPreparingScreenPaint = (callback: () => void) => {
+      if (!isUnmountedRef.current) {
+        setIsPreparingAnswer(true)
+      }
+
+      if (typeof window === 'undefined') {
+        callback()
+        return
+      }
+
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          if (isUnmountedRef.current) {
+            return
+          }
+
+          callback()
+        }, 0)
+      })
+    }
+
+    const hasWindow = typeof window !== 'undefined'
+    const hasSpeechSynthesis = hasWindow && 'speechSynthesis' in window
+    const hasSpeechSynthesisUtterance =
+      hasWindow && 'SpeechSynthesisUtterance' in window
+
+    if (
+      !questionText ||
+      !hasWindow ||
+      !hasSpeechSynthesis ||
+      !hasSpeechSynthesisUtterance
+    ) {
+      runAfterPreparingScreenPaint(() => {
+        void startAnswer()
+      })
+      return
+    }
+
+    isSpeakingQuestionRef.current = true
+
+    if (!isUnmountedRef.current) {
+      setIsPreparingAnswer(true)
+      setIsSpeakingQuestion(true)
+    }
+
+    runAfterPreparingScreenPaint(() => {
+      const utterance = new SpeechSynthesisUtterance(questionText)
+      let didStartRecording = false
+      const speechSynthesis = window.speechSynthesis
+
+      const startAfterSpeech = () => {
+        if (didStartRecording || isUnmountedRef.current) {
+          return
+        }
+
+        didStartRecording = true
+        isSpeakingQuestionRef.current = false
+
+        if (!isUnmountedRef.current) {
+          setIsSpeakingQuestion(false)
+        }
+
+        void startAnswer()
+      }
+
+      utterance.lang = 'ko-KR'
+      utterance.voice = getKoreanSpeechVoice(speechSynthesis)
+      utterance.onend = startAfterSpeech
+      utterance.onerror = startAfterSpeech
+
+      speechSynthesis.cancel()
+      speechSynthesis.resume()
+
+      window.setTimeout(() => {
+        if (didStartRecording || isUnmountedRef.current) {
+          return
+        }
+
+        try {
+          speechSynthesis.speak(utterance)
+          speechSynthesis.resume()
+        } catch {
+          startAfterSpeech()
+        }
+      }, 100)
+    })
+  }, [handleStart, question])
 
   const handleStop = () => {
     void finishAnswer('manual')
@@ -406,8 +557,8 @@ export function LiveScreen({
   const mobileCoachAvatar = (
     <CoachAvatarLive
       {...coachAvatarProps}
-      featured={isAnswerLayout}
-      compact={!isAnswerLayout}
+      featured={isAnswerView}
+      compact={!isAnswerView}
     />
   )
 
@@ -420,7 +571,7 @@ export function LiveScreen({
   )
 
   const mobileCamera = (
-    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerLayout} />
+    <LiveCameraGuide ref={cameraVideoRef} compact={isAnswerView} />
   )
 
   const desktopPracticeControls = (
@@ -428,7 +579,7 @@ export function LiveScreen({
       isRecording={isRecording}
       showStartGuide={showStartGuide}
       onDismissStartGuide={() => setShowStartGuide(false)}
-      onStart={handleStart}
+      onStart={handleStartWithTts}
       onStop={handleStop}
       onNext={handleNextTurn}
       primaryDisabled={isPrimaryControlDisabled}
@@ -437,7 +588,7 @@ export function LiveScreen({
   )
 
   const desktopCamera = (
-    <LiveCameraGuide ref={cameraVideoRef} fill compact={isAnswerLayout} />
+    <LiveCameraGuide ref={cameraVideoRef} fill compact={isAnswerView} />
   )
 
   const renderTurnFeedbackCard = () => (
@@ -495,7 +646,7 @@ export function LiveScreen({
         {/* 콘텐츠 */}
         <div className="absolute inset-x-3.5 bottom-[70px] top-16 overflow-auto pb-3">
           <div className="mb-2.5 space-y-2.5">
-            {isAnswerLayout ? (
+            {isAnswerView ? (
               <>
                 {mobileCoachAvatar}
                 {mobileCamera}
@@ -521,7 +672,7 @@ export function LiveScreen({
             isRecording={isRecording}
             showStartGuide={showStartGuide}
             onDismissStartGuide={() => setShowStartGuide(false)}
-            onStart={handleStart}
+            onStart={handleStartWithTts}
             onStop={handleStop}
             onNext={handleNextTurn}
             primaryDisabled={isPrimaryControlDisabled}
@@ -545,16 +696,16 @@ export function LiveScreen({
           <div className="grid items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
             <div className="space-y-4">
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
-                {isAnswerLayout ? desktopFeaturedCoachAvatar : desktopCamera}
+                {isAnswerView ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
-              {!isAnswerLayout ? desktopPracticeControls : null}
+              {!isAnswerView ? desktopPracticeControls : null}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">
               <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
-                {isAnswerLayout ? desktopCamera : desktopSideCoachAvatar}
+                {isAnswerView ? desktopCamera : desktopSideCoachAvatar}
               </div>
-              {isAnswerLayout ? desktopPracticeControls : null}
+              {isAnswerView ? desktopPracticeControls : null}
               {renderTurnFeedbackCard()}
               <LiveMetrics
                 duration={timeStr}
