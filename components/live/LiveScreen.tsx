@@ -698,14 +698,13 @@ export function LiveScreen({
               <div className="h-[520px] xl:h-[560px] 2xl:h-[600px]">
                 {isAnswerView ? desktopFeaturedCoachAvatar : desktopCamera}
               </div>
-              {!isAnswerView ? desktopPracticeControls : null}
+              {desktopPracticeControls}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4">
               <div className="h-[320px] xl:h-[340px] 2xl:h-[360px]">
                 {isAnswerView ? desktopCamera : desktopSideCoachAvatar}
               </div>
-              {isAnswerView ? desktopPracticeControls : null}
               {renderTurnFeedbackCard()}
               <LiveMetrics
                 duration={timeStr}

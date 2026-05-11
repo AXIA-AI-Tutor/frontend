@@ -249,7 +249,7 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
               ) : (
                 <div className="flex h-21 flex-col items-center justify-center gap-1 border-b border-l border-slate-200 lg:h-29.5">
                   <p className="text-xs font-bold text-slate-400">
-                    점수 변화의 추세를 파악할 수 없습니다.
+                    성장그래프 확인을 위해서는 최소 5건의 리포트가 필요합니다.
                   </p>
                   <p className="text-xs text-slate-400">
                     연습을 조금 더 진행해주세요.
