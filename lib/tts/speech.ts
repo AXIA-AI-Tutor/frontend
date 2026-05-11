@@ -5,9 +5,11 @@ interface VoiceSelectionOptions {
   preferredVoiceNames?: string[]
 }
 
+// female: Google 한국의(Chrome 네트워크 TTS) 우선, 없으면 macOS 로컬 폴백
+// male: macOS Reed 우선 (브라우저에 한국어 남성 Google TTS 없음)
 const GENDER_VOICE_HINTS: Record<AvatarGender, string[]> = {
-  female: ['female', 'yuna', 'sora', 'seoyeon', 'sunhi', 'heami'],
-  male: ['male', 'injoon', 'hyunsu'],
+  female: ['google 한국의', '유나', 'flo', 'sandy', 'shelley', 'grandma'],
+  male: ['reed', 'rocko', 'eddy', 'grandpa'],
 }
 
 function isKoreanVoice(voice: SpeechSynthesisVoice) {
@@ -32,7 +34,6 @@ export function getAvatarSpeechVoice(
 
   return (
     koreanVoices.find((voice) => includesAnyHint(voice, hints)) ??
-    voices.find((voice) => includesAnyHint(voice, hints)) ??
     koreanVoices[0] ??
     null
   )
