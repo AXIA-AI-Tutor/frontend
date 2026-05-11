@@ -73,7 +73,14 @@ export function CoachAvatarLive({
         ].join(' ')}
       >
         {isFeedbackSpeech ? (
-          <p className="break-keep text-slate-700">{summary}</p>
+          <>
+            <span className="mb-1.5 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600">
+              한 줄 요약
+            </span>
+            <p className="break-keep text-[13px] font-bold leading-snug text-slate-700">
+              {summary}
+            </p>
+          </>
         ) : (
           <>
             <p className="break-keep">{question}</p>

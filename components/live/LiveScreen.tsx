@@ -14,6 +14,7 @@ import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { getApiErrorMessage } from '@/lib/api/client'
+import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { generateSessionReport } from '@/lib/api/reports'
 import { completeSession, nextQuestion } from '@/lib/api/sessions'
@@ -128,6 +129,16 @@ export function LiveScreen({
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && feedbackModalOpen) {
+        setFeedbackModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [feedbackModalOpen])
 
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
@@ -713,63 +724,73 @@ export function LiveScreen({
       )}
       {feedbackModalOpen && currentFeedbackEntry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4">
-          <div className="relative h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setFeedbackModalOpen(false)}
-              className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-slate-700 shadow-md transition-colors hover:bg-white"
-              aria-label="피드백 닫기"
-            >
-              <X size={16} />
-            </button>
-            <FeedbackScreen
-              turnNumber={turnNumber}
-              sessionId={sessionId}
-              answerId={currentFeedbackEntry.response.answer.answerId}
-              turn={{
-                question: currentFeedbackEntry.questionText,
-                hint: currentFeedbackEntry.questionIntent ?? '',
-                topic:
-                  currentFeedbackEntry.questionText.length > 16
-                    ? currentFeedbackEntry.questionText.slice(0, 16) + '…'
-                    : currentFeedbackEntry.questionText,
-              }}
-              feedback={{
-                feedbackId: currentFeedbackEntry.response.feedback.feedbackId,
-                answerId: currentFeedbackEntry.response.feedback.answerId,
-                createdAt: currentFeedbackEntry.response.feedback.createdAt,
-                answer: currentFeedbackEntry.response.answer.transcript,
-                summary: currentFeedbackEntry.response.feedback.summary,
-                evidence: currentFeedbackEntry.response.feedback.evidence,
-                improvedExample:
-                  currentFeedbackEntry.response.feedback.improvementExample,
-                scores: [
-                  {
-                    label: '논리성',
-                    score:
-                      currentFeedbackEntry.response.feedback.structureScore,
-                  },
-                  {
-                    label: '구체성',
-                    score:
-                      currentFeedbackEntry.response.feedback.specificityScore,
-                  },
-                  {
-                    label: '관련성',
-                    score:
-                      currentFeedbackEntry.response.feedback.relevanceScore,
-                  },
-                  {
-                    label: '전달력',
-                    score: currentFeedbackEntry.response.feedback.deliveryScore,
-                  },
-                ],
-              }}
-              feedbackSource="live"
-              embedded
-              onNavigate={handleModalNavigate}
-              onToast={onToast}
-            />
+          <div className="flex h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl shadow-2xl">
+            {/* 얇은 헤더 바 — X 버튼 전용 */}
+            <div className="flex h-9 shrink-0 items-center justify-end bg-white px-3 shadow-[0_1px_0_0_#e2e8f0]">
+              <button
+                type="button"
+                onClick={() => setFeedbackModalOpen(false)}
+                className="grid h-7 w-7 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                aria-label="피드백 닫기"
+              >
+                <X size={15} />
+              </button>
+            </div>
+            {/* FeedbackScreen */}
+            <div className="relative flex-1 overflow-hidden">
+              <FeedbackScreen
+                turnNumber={turnNumber}
+                sessionId={sessionId}
+                answerId={currentFeedbackEntry.response.answer.answerId}
+                turn={{
+                  question: currentFeedbackEntry.questionText,
+                  hint: currentFeedbackEntry.questionIntent ?? '',
+                  topic:
+                    currentFeedbackEntry.questionText.length > 16
+                      ? currentFeedbackEntry.questionText.slice(0, 16) + '…'
+                      : currentFeedbackEntry.questionText,
+                }}
+                feedback={{
+                  feedbackId: currentFeedbackEntry.response.feedback.feedbackId,
+                  answerId: currentFeedbackEntry.response.feedback.answerId,
+                  createdAt: currentFeedbackEntry.response.feedback.createdAt,
+                  answer: currentFeedbackEntry.response.answer.transcript,
+                  summary: currentFeedbackEntry.response.feedback.summary,
+                  evidence: currentFeedbackEntry.response.feedback.evidence,
+                  improvedExample:
+                    currentFeedbackEntry.response.feedback.improvementExample,
+                  scores: [
+                    {
+                      label: '논리성',
+                      score:
+                        currentFeedbackEntry.response.feedback.structureScore,
+                    },
+                    {
+                      label: '구체성',
+                      score:
+                        currentFeedbackEntry.response.feedback.specificityScore,
+                    },
+                    {
+                      label: '관련성',
+                      score:
+                        currentFeedbackEntry.response.feedback.relevanceScore,
+                    },
+                    {
+                      label: '전달력',
+                      score:
+                        currentFeedbackEntry.response.feedback.deliveryScore,
+                    },
+                  ],
+                  durationLabel: getAnswerDurationLabel(
+                    currentFeedbackEntry.response.answer
+                  ),
+                }}
+                feedbackSource="live"
+                embedded
+                onNavigate={handleModalNavigate}
+                onToast={onToast}
+              />
+            </div>
           </div>
         </div>
       )}

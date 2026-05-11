@@ -196,6 +196,7 @@ export function FeedbackScreen({
 
   const canMoveToNextQuestion =
     !isReportSource &&
+    !embedded &&
     !!sessionId &&
     (maxQuestionCount === 0 || turnNumber < maxQuestionCount)
 
@@ -285,7 +286,7 @@ export function FeedbackScreen({
       >
         <div className="mx-auto max-w-5xl">
           <header className="flex items-center justify-between gap-3">
-            {canMoveToNextQuestion ? (
+            {!embedded && canMoveToNextQuestion ? (
               <button
                 type="button"
                 onClick={() => void handleNextQuestion()}
@@ -300,7 +301,7 @@ export function FeedbackScreen({
                   <ArrowRight size={15} />
                 )}
               </button>
-            ) : (
+            ) : !embedded ? (
               <button
                 type="button"
                 onClick={handleBack}
@@ -313,7 +314,7 @@ export function FeedbackScreen({
               >
                 <ArrowLeft size={18} />
               </button>
-            )}
+            ) : null}
             <div className="min-w-0 flex-1">
               <p className="text-xs font-black text-blue-600">
                 질문 {turnNumber} 피드백
