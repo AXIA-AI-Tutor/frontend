@@ -12,6 +12,7 @@ import {
 } from '@/components/live/TurnFeedbackCard'
 import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
+import { FeedbackScreen } from '@/components/feedback/FeedbackScreen'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { submitAnswerWithFeedback } from '@/lib/api/answers'
 import { generateSessionReport } from '@/lib/api/reports'
@@ -126,6 +127,7 @@ export function LiveScreen({
   const isUnmountedRef = useRef(false)
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
 
   const activeSessionStart =
     sessionStart && sessionStart.session.id === sessionId ? sessionStart : null
@@ -621,8 +623,24 @@ export function LiveScreen({
       return
     }
 
-    onNavigate('feedback', { turnNumber, sessionId })
+    setFeedbackModalOpen(true)
   }
+
+  const handleModalNavigate = useCallback(
+    (screen: Screen, options?: LiveNavigationOptions) => {
+      setFeedbackModalOpen(false)
+      if (screen === 'live' && options?.turnNumber !== undefined) {
+        setTurnNumber(options.turnNumber)
+        setSeconds(0)
+        setIsRecording(false)
+        setIsAnswerLayout(false)
+        setShowStartGuide(false)
+        setFeedbackStatus('ready-to-start')
+        setWaveformResetSignal((prev) => prev + 1)
+      }
+    },
+    []
+  )
 
   const coachAvatarProps = {
     question:
@@ -679,6 +697,8 @@ export function LiveScreen({
     />
   )
 
+  const currentFeedbackEntry = turnFeedbackByTurn[turnNumber]
+
   const FEEDBACK_LOADING_MESSAGES = [
     'AI 코치가 답변을 분석하고 있어요...',
     '음성과 전달력을 살펴보는 중이에요...',
@@ -690,6 +710,68 @@ export function LiveScreen({
     <>
       {isSubmittingFeedback && (
         <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
+      {feedbackModalOpen && currentFeedbackEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4">
+          <div className="relative h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setFeedbackModalOpen(false)}
+              className="absolute right-4 top-4 z-10 grid h-8 w-8 place-items-center rounded-full bg-white/90 text-slate-700 shadow-md transition-colors hover:bg-white"
+              aria-label="피드백 닫기"
+            >
+              <X size={16} />
+            </button>
+            <FeedbackScreen
+              turnNumber={turnNumber}
+              sessionId={sessionId}
+              answerId={currentFeedbackEntry.response.answer.answerId}
+              turn={{
+                question: currentFeedbackEntry.questionText,
+                hint: currentFeedbackEntry.questionIntent ?? '',
+                topic:
+                  currentFeedbackEntry.questionText.length > 16
+                    ? currentFeedbackEntry.questionText.slice(0, 16) + '…'
+                    : currentFeedbackEntry.questionText,
+              }}
+              feedback={{
+                feedbackId: currentFeedbackEntry.response.feedback.feedbackId,
+                answerId: currentFeedbackEntry.response.feedback.answerId,
+                createdAt: currentFeedbackEntry.response.feedback.createdAt,
+                answer: currentFeedbackEntry.response.answer.transcript,
+                summary: currentFeedbackEntry.response.feedback.summary,
+                evidence: currentFeedbackEntry.response.feedback.evidence,
+                improvedExample:
+                  currentFeedbackEntry.response.feedback.improvementExample,
+                scores: [
+                  {
+                    label: '논리성',
+                    score:
+                      currentFeedbackEntry.response.feedback.structureScore,
+                  },
+                  {
+                    label: '구체성',
+                    score:
+                      currentFeedbackEntry.response.feedback.specificityScore,
+                  },
+                  {
+                    label: '관련성',
+                    score:
+                      currentFeedbackEntry.response.feedback.relevanceScore,
+                  },
+                  {
+                    label: '전달력',
+                    score: currentFeedbackEntry.response.feedback.deliveryScore,
+                  },
+                ],
+              }}
+              feedbackSource="live"
+              embedded
+              onNavigate={handleModalNavigate}
+              onToast={onToast}
+            />
+          </div>
+        </div>
       )}
       {showCompletionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4">
