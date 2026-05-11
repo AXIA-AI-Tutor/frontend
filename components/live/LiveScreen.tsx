@@ -663,6 +663,16 @@ export function LiveScreen({
     []
   )
 
+  const coachGuideMessage =
+    isCurrentTurnAnswered && !isSpeakingFeedbackSummary
+      ? '아래 다음 버튼을 클릭하시어 다음 질문을 진행해주세요.'
+      : !isCurrentTurnAnswered &&
+          !isRecording &&
+          !isSpeakingQuestion &&
+          !isPreparingAnswer
+        ? '준비가 되시면 시작 버튼을 눌러 면접을 시작하세요.'
+        : null
+
   const coachAvatarProps = {
     question:
       question ?? '질문 정보를 불러오지 못했습니다. 홈에서 다시 시작해 주세요.',
@@ -671,6 +681,7 @@ export function LiveScreen({
       turnFeedbackByTurn[turnNumber]?.response?.feedback?.summary ?? null,
     gender: avatarGender,
     speechType: currentSpeechType,
+    guideMessage: coachGuideMessage,
   }
 
   const mobileCoachAvatar = (

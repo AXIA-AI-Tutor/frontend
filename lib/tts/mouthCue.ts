@@ -4,10 +4,11 @@ export type MouthShape = 'closed' | 'open' | 'open_big'
 // open_big: ㅏ(0) ㅑ(2) ㅗ(8) ㅘ(9) ㅙ(10) ㅛ(12)
 const OPEN_BIG_JUNGSEONG = new Set([0, 2, 8, 9, 10, 12])
 
-const MS_PER_SYLLABLE = 240 // rate 0.9 기준 약 4음절/초
-const MS_SPACE = 80
-const MS_PAUSE_SHORT = 280 // 쉼표
-const MS_PAUSE_LONG = 480 // 마침표·느낌표·물음표
+const MS_PER_SYLLABLE = 180 // rate 0.9 기준 약 5.5음절/초
+const MS_MID_CLOSE = 90 // 음절 중간 닫힘 (open → closed 리듬)
+const MS_SPACE = 60
+const MS_PAUSE_SHORT = 220 // 쉼표
+const MS_PAUSE_LONG = 380 // 마침표·느낌표·물음표
 
 function isKoreanSyllable(code: number): boolean {
   return code >= 0xac00 && code <= 0xd7a3
@@ -34,7 +35,11 @@ export function buildMouthCueSchedule(text: string): MouthCueEntry[] {
     const code = char.charCodeAt(0)
 
     if (isKoreanSyllable(code)) {
-      schedule.push({ shape: getVowelShape(getJungseongIndex(code)), delay })
+      const shape = getVowelShape(getJungseongIndex(code))
+      // 음절 시작: 입 열기
+      schedule.push({ shape, delay })
+      // 음절 중간: 살짝 닫기 → 연속 음절도 시각적으로 구분됨
+      schedule.push({ shape: 'closed', delay: delay + MS_MID_CLOSE })
       delay += MS_PER_SYLLABLE
     } else if (char === ' ') {
       delay += MS_SPACE
@@ -46,6 +51,7 @@ export function buildMouthCueSchedule(text: string): MouthCueEntry[] {
       delay += MS_PAUSE_LONG
     } else if (/[a-zA-Z0-9]/.test(char)) {
       schedule.push({ shape: 'open', delay })
+      schedule.push({ shape: 'closed', delay: delay + MS_MID_CLOSE })
       delay += Math.floor(MS_PER_SYLLABLE * 0.7)
     }
   }
