@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react'
 
 import { BottomNav } from '@/components/layout/BottomNav'
+import { StrengthWeakness } from '@/components/report/StrengthWeakness'
 import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getSessionAnswers } from '@/lib/api/answers'
 import { getSessionReport } from '@/lib/api/reports'
 import { getSession } from '@/lib/api/sessions'
+import { parseFeedbackItems } from '@/lib/parseFeedback'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -117,6 +119,9 @@ export function SessionAnswerListScreen({
     ? `${MODE_LABEL[session.mode]} · ${session.target}`
     : '세션 상세'
 
+  const sessionStrengths = parseFeedbackItems(report?.strengths, 3)
+  const sessionWeaknesses = parseFeedbackItems(report?.improvements, 5)
+
   return (
     <>
       {/* 헤더 */}
@@ -166,6 +171,16 @@ export function SessionAnswerListScreen({
                 </p>
               </div>
             </div>
+
+            {/* 강점 / 개선점 */}
+            {(sessionStrengths.length > 0 || sessionWeaknesses.length > 0) && (
+              <div className="mb-2.5">
+                <StrengthWeakness
+                  strengths={sessionStrengths}
+                  weaknesses={sessionWeaknesses}
+                />
+              </div>
+            )}
 
             {/* 질문 목록 */}
             {answers.length === 0 ? (

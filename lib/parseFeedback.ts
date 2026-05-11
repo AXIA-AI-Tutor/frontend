@@ -1,10 +1,10 @@
 /**
- * 백엔드가 Python dict repr 형식으로 내려주는 strengths/improvements 문자열을
- * 표시용 항목 배열로 변환한다.
+ * 백엔드가 내려주는 strengths/improvements 문자열을 표시용 항목 배열로 변환한다.
  *
  * 지원 형식:
  *   - Python dict: {'key': 'value', 'key2': ['item1', 'item2']}
- *   - 줄바꿈 구분 일반 텍스트
+ *   - 번호+볼드 plain text: "1. **레이블**: 내용\n2. **레이블**: 내용"
+ *   - 번호 plain text: "1. 내용\n2. 내용"
  */
 
 export interface FeedbackItem {
@@ -25,9 +25,25 @@ function getLabel(key: string): string {
   return KEY_LABELS[key] ?? key
 }
 
-// (변수명: 수치) 형태의 괄호 내용 제거 — LLM이 score 정보를 포함할 때 가드
+// ** 마크다운 볼드 및 (변수명: 수치) 괄호 제거
 function cleanText(text: string): string {
-  return text.replace(/\s*\([^)]+\)/g, '').trim()
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/\s*\([^)]+\)/g, '')
+    .trim()
+}
+
+// "1. **레이블**: 내용" 또는 "1. 내용" 형태의 줄을 FeedbackItem으로 파싱
+function parseTextLine(line: string): FeedbackItem {
+  const boldLabel = line.match(/^\d+\.\s+\*\*([^*]+)\*\*:\s*(.+)/)
+  if (boldLabel) {
+    return { label: boldLabel[1].trim(), text: cleanText(boldLabel[2]) }
+  }
+  const numbered = line.match(/^\d+\.\s+(.+)/)
+  if (numbered) {
+    return { label: '', text: cleanText(numbered[1]) }
+  }
+  return { label: '', text: cleanText(line) }
 }
 
 export function parseFeedbackItems(
@@ -42,7 +58,7 @@ export function parseFeedbackItems(
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((s) => ({ label: '', text: cleanText(s) }))
+      .map(parseTextLine)
     return maxItems != null ? items.slice(0, maxItems) : items
   }
 
