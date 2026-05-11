@@ -25,19 +25,27 @@ function getLabel(key: string): string {
   return KEY_LABELS[key] ?? key
 }
 
-// ** 마크다운 볼드 및 (변수명: 수치) 괄호 제거
+// ** 마크다운 볼드, (변수명: 수치) 괄호, 선행 '- ' 제거
 function cleanText(text: string): string {
   return text
     .replace(/\*\*/g, '')
     .replace(/\s*\([^)]+\)/g, '')
+    .replace(/^-\s+/, '')
     .trim()
 }
 
-// "1. **레이블**: 내용" 또는 "1. 내용" 형태의 줄을 FeedbackItem으로 파싱
+// "1. **레이블**: 내용", "- **레이블**: 내용", "1. 내용" 형태의 줄을 FeedbackItem으로 파싱
 function parseTextLine(line: string): FeedbackItem {
-  const boldLabel = line.match(/^\d+\.\s+\*\*([^*]+)\*\*:\s*(.+)/)
-  if (boldLabel) {
-    return { label: boldLabel[1].trim(), text: cleanText(boldLabel[2]) }
+  const numberedBoldLabel = line.match(/^\d+\.\s+\*\*([^*]+)\*\*:\s*(.+)/)
+  if (numberedBoldLabel) {
+    return {
+      label: numberedBoldLabel[1].trim(),
+      text: cleanText(numberedBoldLabel[2]),
+    }
+  }
+  const dashBoldLabel = line.match(/^-\s+\*\*([^*]+)\*\*:\s*(.+)/)
+  if (dashBoldLabel) {
+    return { label: dashBoldLabel[1].trim(), text: cleanText(dashBoldLabel[2]) }
   }
   const numbered = line.match(/^\d+\.\s+(.+)/)
   if (numbered) {
