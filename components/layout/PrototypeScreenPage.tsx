@@ -343,7 +343,10 @@ export function PrototypeScreenPage({
               <nav className="flex flex-col gap-1">
                 {DESKTOP_NAV_ITEMS.map(
                   ({ icon: Icon, label, description, screen }) => {
-                    const isDisabled = screen === 'live' && !hasActiveSession
+                    const isDisabled =
+                      (screen === 'live' && !hasActiveSession) ||
+                      (hasActiveSession &&
+                        (screen === 'home' || screen === 'report'))
                     return (
                       <button
                         key={screen}

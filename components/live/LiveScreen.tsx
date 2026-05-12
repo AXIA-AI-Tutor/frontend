@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Play, SkipForward, Square, X } from 'lucide-react'
 import { LiveMetrics } from '@/components/live/LiveMetrics'
 import { CoachAvatarLive } from '@/components/live/CoachAvatarLive'
@@ -72,6 +73,7 @@ export function LiveScreen({
   sessionId,
   answerTimeLimitSec = 120,
 }: LiveScreenProps) {
+  const router = useRouter()
   const [seconds, setSeconds] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
   const [showStartGuide, setShowStartGuide] = useState(true)
@@ -686,12 +688,12 @@ export function LiveScreen({
 
   const coachGuideMessage =
     isCurrentTurnAnswered && !isSpeakingFeedbackSummary
-      ? '다음 버튼을 클릭하여 질문을 진행해주세요.'
+      ? '다음 버튼을 눌러 계속 진행해주세요.'
       : !isCurrentTurnAnswered &&
           !isRecording &&
           !isSpeakingQuestion &&
           !isPreparingAnswer
-        ? '준비가 되셨다면, 시작 버튼을 클릭하여 답변을 시작하세요.'
+        ? '준비가 되시면 시작 버튼을 눌러주세요.'
         : null
 
   const coachAvatarProps = {
@@ -865,7 +867,11 @@ export function LiveScreen({
               onClick={() => {
                 resetPracticeSession()
                 clearTurnFeedback()
-                onNavigate('report')
+                if (sessionId) {
+                  router.push(`/report/${sessionId}`)
+                } else {
+                  onNavigate('report')
+                }
               }}
               className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
             >
@@ -930,7 +936,9 @@ export function LiveScreen({
           current="live"
           onNavigate={onNavigate}
           disabledScreens={
-            isPracticeSessionActive(sessionStart) ? [] : ['live']
+            isPracticeSessionActive(sessionStart)
+              ? ['home', 'report']
+              : ['live']
           }
         />
       </div>

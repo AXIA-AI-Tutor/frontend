@@ -82,7 +82,7 @@ export function CoachAvatarLive({
 
       {/* expanded — 안내 문구 말풍선 (데스크탑 사이드바) */}
       {expanded && showGuide && (
-        <div className="absolute left-1/2 top-4 w-[85%] -translate-x-1/2 rounded-[18px] bg-white p-3 text-[12px] font-black leading-snug shadow-md">
+        <div className="absolute left-1/2 top-4 w-fit max-w-[90%] -translate-x-1/2 rounded-[18px] bg-white p-3 text-[12px] font-black leading-snug shadow-md whitespace-nowrap">
           {guideMessage}
           <span className="absolute -bottom-2 left-10 border-solid border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-12 border-t-white" />
         </div>
