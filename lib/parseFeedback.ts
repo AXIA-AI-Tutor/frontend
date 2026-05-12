@@ -102,3 +102,15 @@ export function parseFeedbackItems(
 export function parseFeedbackText(raw: string | null | undefined): string[] {
   return parseFeedbackItems(raw).map((item) => item.text)
 }
+
+// evidence·summary 등 전체 문단에서 마크다운·코드 잔재 제거
+export function sanitizeFeedbackText(text: string | null | undefined): string {
+  if (!text) return ''
+  return text
+    .replace(/\*\*/g, '') // **마크다운 볼드** 제거
+    .replace(/\s*\([^)]*`[^)]*\)/g, '') // (`code >= value`) 패턴 제거
+    .replace(/`[^`]+`/g, '') // 남은 `code` 제거
+    .replace(/\s*\([a-z][a-z_]*\s*[:>=<!]+\s*[\w.]+\)/g, '') // (var: value), (var >= num) 패턴 제거
+    .replace(/\s{2,}/g, ' ') // 다중 공백 정리
+    .trim()
+}
