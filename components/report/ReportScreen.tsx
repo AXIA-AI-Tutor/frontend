@@ -97,6 +97,7 @@ export function ReportScreen({ onNavigate, onToast }: ReportScreenProps) {
 
         // 세션별 총점으로 경향선 구성 (오래된 순, 5개 이상일 때만 표시)
         const scoredSessions = allReports
+          .slice(0, 10)
           .map((r, i) => ({ score: r?.totalScore ?? null, sessionIdx: i }))
           .filter(
             (item): item is { score: number; sessionIdx: number } =>

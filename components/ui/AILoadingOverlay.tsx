@@ -7,11 +7,15 @@ interface AILoadingOverlayProps {
   intervalMs?: number
 }
 
+const DOT_COUNT = 5
+const DOT_INTERVAL_MS = 240
+
 export function AILoadingOverlay({
   messages,
   intervalMs = 3500,
 }: AILoadingOverlayProps) {
   const [index, setIndex] = useState(0)
+  const [activeDot, setActiveDot] = useState(0)
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -19,6 +23,13 @@ export function AILoadingOverlay({
     }, intervalMs)
     return () => clearInterval(timer)
   }, [messages.length, intervalMs])
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveDot((prev) => (prev + 1) % DOT_COUNT)
+    }, DOT_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-6 backdrop-blur-sm">
@@ -29,16 +40,21 @@ export function AILoadingOverlay({
             🎙️
           </span>
         </div>
-        <p className="min-h-[2.5rem] text-sm font-black leading-snug text-slate-700 transition-all">
+        <p className="min-h-10 text-sm font-black leading-snug text-slate-700">
           {messages[index]}
         </p>
-        <div className="mt-4 flex justify-center gap-1.5">
-          {messages.map((_, i) => (
+        <div className="mt-5 flex items-center justify-center gap-2">
+          {Array.from({ length: DOT_COUNT }).map((_, i) => (
             <span
               key={i}
-              className={`block h-1.5 rounded-full transition-all duration-300 ${
-                i === index ? 'w-4 bg-blue-600' : 'w-1.5 bg-slate-200'
-              }`}
+              className="block h-2 w-2 rounded-full"
+              style={{
+                backgroundColor: activeDot === i ? '#3b82f6' : '#cbd5e1',
+                transform:
+                  activeDot === i ? 'translateY(-6px)' : 'translateY(0)',
+                transition:
+                  'transform 200ms ease-in-out, background-color 200ms ease-in-out',
+              }}
             />
           ))}
         </div>
