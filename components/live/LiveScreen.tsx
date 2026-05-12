@@ -126,8 +126,12 @@ export function LiveScreen({
   const isSpeakingFeedbackSummaryRef = useRef(false)
   const isStartingAnswerRef = useRef(false)
   const isUnmountedRef = useRef(false)
+  const reportDoneRef = useRef(false)
+  const reportPromiseRef = useRef<Promise<unknown> | null>(null)
 
   const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [showReportLoadingOverlay, setShowReportLoadingOverlay] =
+    useState(false)
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
 
   useEffect(() => {
@@ -314,23 +318,40 @@ export function LiveScreen({
         setFeedbackStatus('ready')
 
         if (isLastTurn) {
+          reportDoneRef.current = false
+          reportPromiseRef.current = null
+
           try {
             if (sessionId) {
               await completeSession(sessionId)
-              // 리포트 생성은 AI 처리 시간이 걸리므로 응답을 기다리지 않는다.
-              void generateSessionReport(sessionId).catch((error) => {
-                // eslint-disable-next-line no-console
-                console.error('[KAN-201] report generation failed', error)
-                onToast(
-                  '리포트 생성이 지연되고 있습니다. 리포트 목록에서 다시 확인해 주세요.'
-                )
-              })
+              const p = generateSessionReport(sessionId)
+                .then(() => {
+                  reportDoneRef.current = true
+                })
+                .catch((error) => {
+                  // eslint-disable-next-line no-console
+                  console.error('[KAN-201] report generation failed', error)
+                  reportDoneRef.current = true // 실패해도 모달은 표시
+                })
+              reportPromiseRef.current = p
             }
           } catch {
-            // 세션 완료 실패해도 답변 제출은 성공이므로 모달은 표시한다.
+            // 세션 완료 실패해도 TTS·모달은 진행한다.
+            reportDoneRef.current = true
           }
+
           startFeedbackSummarySpeech(response.feedback.summary, () => {
-            setShowCompletionModal(true)
+            if (reportDoneRef.current) {
+              setShowCompletionModal(true)
+              return
+            }
+            setShowReportLoadingOverlay(true)
+            void (reportPromiseRef.current ?? Promise.resolve()).then(() => {
+              if (!isUnmountedRef.current) {
+                setShowReportLoadingOverlay(false)
+                setShowCompletionModal(true)
+              }
+            })
           })
           return
         }
@@ -665,12 +686,12 @@ export function LiveScreen({
 
   const coachGuideMessage =
     isCurrentTurnAnswered && !isSpeakingFeedbackSummary
-      ? '아래 다음 버튼을 클릭하시어 다음 질문을 진행해주세요.'
+      ? '다음 버튼을 클릭하여 질문을 진행해주세요.'
       : !isCurrentTurnAnswered &&
           !isRecording &&
           !isSpeakingQuestion &&
           !isPreparingAnswer
-        ? '준비가 되시면 시작 버튼을 눌러 면접을 시작하세요.'
+        ? '준비가 되셨다면, 시작 버튼을 클릭하여 답변을 시작하세요.'
         : null
 
   const coachAvatarProps = {
@@ -739,10 +760,19 @@ export function LiveScreen({
     '거의 다 됐어요, 잠시만 기다려 주세요!',
   ]
 
+  const REPORT_LOADING_MESSAGES = [
+    '모든 질문과 답변을 분석하고 있어요.',
+    '종합 평가를 진행중이에요.',
+    '조금만 기다려 주세요.',
+  ]
+
   return (
     <>
       {isSubmittingFeedback && (
         <AILoadingOverlay messages={FEEDBACK_LOADING_MESSAGES} />
+      )}
+      {showReportLoadingOverlay && (
+        <AILoadingOverlay messages={REPORT_LOADING_MESSAGES} />
       )}
       {feedbackModalOpen && currentFeedbackEntry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4">
@@ -835,9 +865,20 @@ export function LiveScreen({
               onClick={() => {
                 resetPracticeSession()
                 clearTurnFeedback()
-                onNavigate('home')
+                onNavigate('report')
               }}
               className="mt-5 w-full rounded-xl bg-blue-600 py-3 text-sm font-black text-white transition-colors hover:bg-blue-700"
+            >
+              바로 확인하기
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                resetPracticeSession()
+                clearTurnFeedback()
+                onNavigate('home')
+              }}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white py-3 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50"
             >
               홈으로
             </button>
