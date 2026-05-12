@@ -18,6 +18,7 @@ import { getAnswerDurationLabel } from '@/lib/feedback/duration'
 import { getApiErrorMessage } from '@/lib/api/client'
 import { getAnswer, getAnswerFeedbacks } from '@/lib/api/answers'
 import { nextQuestion } from '@/lib/api/sessions'
+import { sanitizeFeedbackText } from '@/lib/parseFeedback'
 import {
   isPracticeSessionActive,
   usePracticeSessionStore,
@@ -243,10 +244,14 @@ export function FeedbackScreen({
     fetchState === 'done' && apiAnswerStatus ? apiAnswerStatus : answerStatus
 
   const answerText = displayFeedback.answer || '답변 전사 결과가 없습니다.'
-  const summary = displayFeedback.summary || '생성된 피드백 요약이 없습니다.'
-  const evidence = displayFeedback.evidence || '생성된 근거가 없습니다.'
+  const summary =
+    sanitizeFeedbackText(displayFeedback.summary) ||
+    '생성된 피드백 요약이 없습니다.'
+  const evidence =
+    sanitizeFeedbackText(displayFeedback.evidence) || '생성된 근거가 없습니다.'
   const improvementExample =
-    displayFeedback.improvedExample || '생성된 개선 예시가 없습니다.'
+    sanitizeFeedbackText(displayFeedback.improvedExample) ||
+    '생성된 개선 예시가 없습니다.'
 
   if (fetchState === 'loading') {
     return (
