@@ -267,23 +267,6 @@ export function LiveScreen({
         const startedAt = startedAtRef.current ?? endedAt
         const { eyeContactScore, postureScore } = getAverageScores()
 
-        // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
-        // eslint-disable-next-line no-console
-        console.log('[KAN-66] POST answers/with-feedback request', {
-          sessionId,
-          reason,
-          questionText: question,
-          file: {
-            name: recording.file.name,
-            type: recording.file.type,
-            size: recording.file.size,
-          },
-          eyeContactScore,
-          postureScore,
-          startedAt: formatLocalDateTime(startedAt),
-          endedAt: formatLocalDateTime(endedAt),
-        })
-
         if (!sessionId) {
           onToast('세션 ID가 없어 피드백을 요청하지 못했습니다.')
           setFeedbackStatus('ready-to-start')
@@ -308,10 +291,6 @@ export function LiveScreen({
           startedAt: formatLocalDateTime(startedAt),
           endedAt: formatLocalDateTime(endedAt),
         })
-
-        // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
-        // eslint-disable-next-line no-console
-        console.log('[KAN-66] POST answers/with-feedback response', response)
 
         setTurnFeedback(turnNumber, {
           questionText: question, // null guard above ensures question is string here
@@ -363,7 +342,7 @@ export function LiveScreen({
         onToast(`질문 ${turnNumber} 피드백이 생성되었습니다.`)
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('[KAN-66] POST answers/with-feedback failed', error)
+        console.error('POST answers/with-feedback failed', error)
 
         const message = getApiErrorMessage(
           error,

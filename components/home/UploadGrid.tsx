@@ -13,9 +13,9 @@ interface DocumentItem {
 
 const DOCUMENT_ITEMS: DocumentItem[] = [
   { docType: 'RESUME', icon: '📄', label: '이력서' },
-  { docType: 'ETC', icon: '✎', label: '자소서' },
+  { docType: 'ETC', icon: '✎', label: '자기소개서' },
   { docType: 'PORTFOLIO', icon: '💼', label: '포트폴리오' },
-  { docType: 'JOB_DESCRIPTION', icon: '📋', label: 'JD' },
+  { docType: 'JOB_DESCRIPTION', icon: '📋', label: '직무기술서' },
 ]
 
 interface UploadGridProps {
