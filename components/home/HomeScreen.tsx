@@ -350,10 +350,8 @@ export function HomeScreen({
               aria-busy={isCreatingSession}
               className="flex w-[calc(100%-2rem)] items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)] disabled:cursor-wait disabled:opacity-75"
             >
-              {isCreatingSession ? (
+              {isCreatingSession && (
                 <Loader2 className="animate-spin" size={20} />
-              ) : (
-                '▶'
               )}
               세션 시작하기
             </button>
@@ -450,10 +448,8 @@ export function HomeScreen({
                   aria-busy={isCreatingSession}
                   className="flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-4 text-lg font-black text-white shadow-lg transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-75"
                 >
-                  {isCreatingSession ? (
+                  {isCreatingSession && (
                     <Loader2 className="animate-spin" size={20} />
-                  ) : (
-                    '▶'
                   )}
                   세션 시작하기
                 </button>
