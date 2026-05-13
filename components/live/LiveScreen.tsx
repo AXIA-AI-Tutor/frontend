@@ -166,12 +166,13 @@ export function LiveScreen({
   const effectiveFeedbackStatus: TurnFeedbackStatus = isCurrentTurnAnswered
     ? 'ready'
     : feedbackStatus
-  const isPrimaryControlDisabled =
-    isPreparingAnswer ||
-    isSpeakingQuestion ||
-    isStartingAnswer ||
-    isSubmittingFeedback ||
-    isCurrentTurnAnswered
+  const isPrimaryControlDisabled = isSpeakingFeedbackSummary
+    ? false
+    : isPreparingAnswer ||
+      isSpeakingQuestion ||
+      isStartingAnswer ||
+      isSubmittingFeedback ||
+      isCurrentTurnAnswered
   const isNextControlDisabled =
     isSubmittingFeedback ||
     isSpeakingFeedbackSummary ||
@@ -599,6 +600,11 @@ export function LiveScreen({
     onToast('답변이 완료되었습니다.')
   }
 
+  const handleStopFeedbackTts = useCallback(() => {
+    finishFeedbackSummarySpeech()
+    window.speechSynthesis.cancel()
+  }, [finishFeedbackSummarySpeech])
+
   const handleNextTurn = async () => {
     if (isSpeakingFeedbackSummary) {
       return
@@ -664,7 +670,8 @@ export function LiveScreen({
 
   const handleOpenFeedback = () => {
     if (isSpeakingFeedbackSummary) {
-      return
+      finishFeedbackSummarySpeech()
+      window.speechSynthesis.cancel()
     }
 
     setFeedbackModalOpen(true)
@@ -730,10 +737,12 @@ export function LiveScreen({
   const desktopPracticeControls = (
     <LiveControls
       isRecording={isRecording}
+      isFeedbackTtsSpeaking={isSpeakingFeedbackSummary}
       showStartGuide={showStartGuide}
       onDismissStartGuide={() => setShowStartGuide(false)}
       onStart={handleStartWithTts}
       onStop={handleStop}
+      onStopFeedbackTts={handleStopFeedbackTts}
       onNext={handleNextTurn}
       primaryDisabled={isPrimaryControlDisabled}
       nextDisabled={isNextControlDisabled}
@@ -749,7 +758,6 @@ export function LiveScreen({
       status={effectiveFeedbackStatus}
       turnNumber={turnNumber}
       onOpen={handleOpenFeedback}
-      disabled={isSpeakingFeedbackSummary}
     />
   )
 
@@ -922,13 +930,16 @@ export function LiveScreen({
           />
           <LiveControls
             isRecording={isRecording}
+            isFeedbackTtsSpeaking={isSpeakingFeedbackSummary}
             showStartGuide={showStartGuide}
             onDismissStartGuide={() => setShowStartGuide(false)}
             onStart={handleStartWithTts}
             onStop={handleStop}
+            onStopFeedbackTts={handleStopFeedbackTts}
             onNext={handleNextTurn}
             primaryDisabled={isPrimaryControlDisabled}
             nextDisabled={isNextControlDisabled}
+            iconOnly
           />
         </div>
 
@@ -979,9 +990,11 @@ export function LiveScreen({
 
 interface LiveControlsProps {
   isRecording: boolean
+  isFeedbackTtsSpeaking: boolean
   showStartGuide: boolean
   onStart: () => void
   onStop: () => void
+  onStopFeedbackTts: () => void
   onNext: () => void
   onDismissStartGuide: () => void
   iconOnly?: boolean
@@ -992,9 +1005,11 @@ interface LiveControlsProps {
 
 function LiveControls({
   isRecording,
+  isFeedbackTtsSpeaking,
   showStartGuide,
   onStart,
   onStop,
+  onStopFeedbackTts,
   onNext,
   onDismissStartGuide,
   iconOnly = false,
@@ -1006,6 +1021,11 @@ function LiveControls({
   const isNextDisabled = disabled || nextDisabled
 
   const handlePrimaryClick = () => {
+    if (isFeedbackTtsSpeaking) {
+      onStopFeedbackTts()
+      return
+    }
+
     if (isPrimaryDisabled) {
       return
     }
@@ -1017,6 +1037,12 @@ function LiveControls({
     onStart()
   }
 
+  const primaryColorClass = isFeedbackTtsSpeaking
+    ? 'border-amber-200 text-amber-600 hover:bg-amber-50'
+    : isRecording
+      ? 'border-red-200 text-red-500 hover:bg-red-50'
+      : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+
   if (iconOnly) {
     return (
       <div className="flex items-center gap-2">
@@ -1024,25 +1050,44 @@ function LiveControls({
           <button
             type="button"
             onClick={handlePrimaryClick}
-            disabled={isPrimaryDisabled}
+            disabled={isPrimaryDisabled && !isFeedbackTtsSpeaking}
             className={[
               'grid h-9 w-9 place-items-center rounded-lg border bg-white shadow-sm transition-colors',
-              isRecording
-                ? 'border-red-200 text-red-500 hover:bg-red-50'
-                : 'border-blue-200 text-blue-600 hover:bg-blue-50',
-              isPrimaryDisabled ? 'cursor-not-allowed opacity-60' : '',
+              primaryColorClass,
+              isPrimaryDisabled && !isFeedbackTtsSpeaking
+                ? 'cursor-not-allowed opacity-60'
+                : '',
             ].join(' ')}
-            aria-label={isRecording ? '녹음 중지' : '연습 시작'}
-            title={isRecording ? '녹음 중지' : '연습 시작'}
+            aria-label={
+              isFeedbackTtsSpeaking
+                ? '피드백 읽기 건너뛰기'
+                : isRecording
+                  ? '녹음 중지'
+                  : '연습 시작'
+            }
+            title={
+              isFeedbackTtsSpeaking
+                ? '건너뛰기'
+                : isRecording
+                  ? '녹음 중지'
+                  : '연습 시작'
+            }
           >
-            {isRecording ? (
+            {isFeedbackTtsSpeaking ? (
+              <SkipForward size={14} />
+            ) : isRecording ? (
               <Square size={14} fill="currentColor" />
             ) : (
               <Play size={15} fill="currentColor" />
             )}
           </button>
           <StartGuideBubble
-            show={showStartGuide && !isRecording && !isPrimaryDisabled}
+            show={
+              showStartGuide &&
+              !isRecording &&
+              !isFeedbackTtsSpeaking &&
+              !isPrimaryDisabled
+            }
             onClose={onDismissStartGuide}
             className="right-0 top-[calc(100%+10px)]"
             arrow="top-right"
@@ -1068,21 +1113,23 @@ function LiveControls({
         <button
           type="button"
           onClick={handlePrimaryClick}
-          disabled={isPrimaryDisabled}
+          disabled={isPrimaryDisabled && !isFeedbackTtsSpeaking}
           className={[
             'inline-flex w-full items-center justify-center gap-1.5 rounded-lg border bg-white py-3 font-black shadow-sm transition-colors',
-            isRecording
-              ? 'border-red-200 text-red-500 hover:bg-red-50'
-              : 'border-blue-200 text-blue-600 hover:bg-blue-50',
-            isPrimaryDisabled ? 'cursor-not-allowed opacity-60' : '',
+            primaryColorClass,
+            isPrimaryDisabled && !isFeedbackTtsSpeaking
+              ? 'cursor-not-allowed opacity-60'
+              : '',
           ].join(' ')}
         >
-          {isRecording ? (
+          {isFeedbackTtsSpeaking ? (
+            <SkipForward size={15} />
+          ) : isRecording ? (
             <Square size={14} fill="currentColor" />
           ) : (
             <Play size={15} fill="currentColor" />
           )}
-          {isRecording ? '중지' : '시작'}
+          {isFeedbackTtsSpeaking ? '건너뛰기' : isRecording ? '중지' : '시작'}
         </button>
         <StartGuideBubble
           show={false}
