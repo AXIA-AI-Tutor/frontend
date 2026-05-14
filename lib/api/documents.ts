@@ -47,6 +47,16 @@ export async function completeDocumentUpload(
   return response.data.data
 }
 
+export async function createDocumentSummary(
+  documentId: number
+): Promise<DocumentResponse> {
+  const response = await apiClient.post<ApiResponse<DocumentResponse>>(
+    `/api/documents/${documentId}/summary`
+  )
+
+  return response.data.data
+}
+
 export async function uploadFileToSignedUrl(
   upload: DocumentUploadUrlResponse,
   file: File
