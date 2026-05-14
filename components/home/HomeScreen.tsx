@@ -15,7 +15,10 @@ import { SessionSummary } from '@/components/home/SessionSummary'
 import { AILoadingOverlay } from '@/components/ui/AILoadingOverlay'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { getApiErrorMessage, isApiError } from '@/lib/api/client'
-import { uploadSessionDocument } from '@/lib/api/documents'
+import {
+  createDocumentSummary,
+  uploadSessionDocument,
+} from '@/lib/api/documents'
 import { createSession, startSession } from '@/lib/api/sessions'
 import { useAuthStore } from '@/lib/stores/auth'
 import {
@@ -23,7 +26,7 @@ import {
   usePracticeSessionStore,
 } from '@/lib/stores/practiceSession'
 import type { Screen } from '@/types'
-import type { DocumentType } from '@/types/document'
+import type { DocumentResponse, DocumentType } from '@/types/document'
 import type {
   SessionDifficulty,
   SessionMode,
@@ -75,6 +78,8 @@ export function HomeScreen({
   )
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [isStartingSession, setIsStartingSession] = useState(false)
+  const [summarizingCount, setSummarizingCount] = useState(0)
+  const [hasSummaryError, setHasSummaryError] = useState(false)
   const user = useAuthStore((state) => state.user)
   const authStatus = useAuthStore((state) => state.status)
   const isAuthenticated = authStatus === 'authenticated' && Boolean(user)
@@ -142,8 +147,9 @@ export function HomeScreen({
       throw new Error('세션 ID가 없습니다.')
     }
 
+    let uploadedDoc: DocumentResponse
     try {
-      const document = await uploadSessionDocument(sessionId, { docType, file })
+      uploadedDoc = await uploadSessionDocument(sessionId, { docType, file })
 
       // TODO(KAN-66): 백엔드 연동 확인 후 제거한다.
       // eslint-disable-next-line no-console
@@ -155,7 +161,7 @@ export function HomeScreen({
           type: file.type,
           size: file.size,
         },
-        document,
+        document: uploadedDoc,
       })
       onToast(`${label} 업로드 완료`)
     } catch (error) {
@@ -185,6 +191,17 @@ export function HomeScreen({
 
       onToast(message)
       throw error
+    }
+
+    setSummarizingCount((c) => c + 1)
+    try {
+      await createDocumentSummary(uploadedDoc.id)
+      setHasSummaryError(false)
+    } catch {
+      setHasSummaryError(true)
+      onToast(`${label} 요약 생성에 실패했습니다. 다시 업로드해 주세요.`)
+    } finally {
+      setSummarizingCount((c) => c - 1)
     }
   }
 
@@ -329,15 +346,20 @@ export function HomeScreen({
           {/* 연습 시작 CTA */}
           <button
             onClick={handlePracticeStart}
-            disabled={!sessionId || isStartingSession}
+            disabled={
+              !sessionId ||
+              isStartingSession ||
+              summarizingCount > 0 ||
+              hasSummaryError
+            }
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-0 bg-[linear-gradient(135deg,#1689ff,#7c3aed)] py-3.75 text-lg font-black text-white shadow-[0_13px_26px_rgba(55,86,255,.25)] disabled:cursor-wait disabled:opacity-75"
           >
-            {isStartingSession ? (
+            {isStartingSession || summarizingCount > 0 ? (
               <Loader2 className="animate-spin" size={20} />
             ) : (
               '▶'
             )}
-            연습 시작
+            {summarizingCount > 0 ? '문서 요약 생성 중...' : '연습 시작'}
           </button>
         </div>
 
@@ -421,16 +443,25 @@ export function HomeScreen({
                 <button
                   type="button"
                   onClick={handlePracticeStart}
-                  disabled={!sessionId || isStartingSession}
+                  disabled={
+                    !sessionId ||
+                    isStartingSession ||
+                    summarizingCount > 0 ||
+                    hasSummaryError
+                  }
                   className="flex min-h-12 items-center justify-between rounded-lg border border-blue-200 bg-blue-600 px-5 py-3 text-left text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-wait disabled:opacity-75"
                 >
                   <span>
-                    <span className="block text-md font-black">연습 시작</span>
+                    <span className="block text-md font-black">
+                      {summarizingCount > 0
+                        ? '문서 요약 생성 중...'
+                        : '연습 시작'}
+                    </span>
                     <span className="block text-xs text-blue-100">
                       설정한 자료와 목표로 실시간 연습을 시작합니다.
                     </span>
                   </span>
-                  {isStartingSession ? (
+                  {isStartingSession || summarizingCount > 0 ? (
                     <Loader2 className="animate-spin" size={22} />
                   ) : (
                     <ArrowRight size={24} />
